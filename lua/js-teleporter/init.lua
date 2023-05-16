@@ -4,7 +4,7 @@ local M = {}
 
 ---@param opts table: Configuration options
 M.setup = function(opts)
-	require("js-teleporter.config").set_options(opts)
+  require("js-teleporter.config").set_options(opts)
 end
 
 ---Suggest user to create new file if the destination file is not found
@@ -12,66 +12,65 @@ end
 ---@param filename string
 ---@param workspace_path string
 M.suggest_to_create_test = function(teleporter, filename, workspace_path)
-	-- TODO
-	local context = "tests"
-	local suggestion_paths = teleporter.suggest_other_context_paths(context, filename, workspace_path)
-	if #suggestion_paths == 0 then
-		vim.api.nvim_echo({ { "[JSTeleporter] destination is not found", "Normal" } }, true, {})
-		return
-	end
+  -- TODO
+  local context = "tests"
+  local suggestion_paths = teleporter.suggest_other_context_paths(context, filename, workspace_path)
+  if #suggestion_paths == 0 then
+    vim.api.nvim_echo({ { "[JSTeleporter] destination is not found", "Normal" } }, true, {})
+    return
+  end
 
-	local select_items = {}
-	for _, v in ipairs(suggestion_paths) do
-		table.insert(select_items, v)
-	end
-	table.insert(select_items, "No")
+  local select_items = {}
+  for _, v in ipairs(suggestion_paths) do
+    table.insert(select_items, v)
+  end
+  table.insert(select_items, "No")
 
-	-- Show prompt and ask user to create the other context file or not
-	vim.ui.select(select_items, {
-		prompt = "The " .. context .. " file is not found. Create " .. context .. " file?",
-	}, function(choice)
-		if choice == "No" then
-			vim.api.nvim_echo({ { "\n[JSTeleporter] File is not created", "Normal" } }, true, {})
-			return
-		end
-		util.create_file(choice)
-		util.open_file(choice)
-		vim.api.nvim_echo({ { '\n[JSTeleporter] "' .. choice .. '" created!', "Normal" } }, true, {})
-	end)
+  -- Show prompt and ask user to create the other context file or not
+  vim.ui.select(select_items, {
+    prompt = "The " .. context .. " file is not found. Create " .. context .. " file?",
+  }, function(choice)
+    if choice == "No" then
+      vim.api.nvim_echo({ { "\n[JSTeleporter] File is not created", "Normal" } }, true, {})
+      return
+    end
+    util.create_file(choice)
+    util.open_file(choice)
+    vim.api.nvim_echo({ { '\n[JSTeleporter] "' .. choice .. '" created!', "Normal" } }, true, {})
+  end)
 end
 
-M.teleport = function()
-	local conf = require("js-teleporter.config")
-	local teleporter = require("js-teleporter.teleporter")
+---Run teleport
+---@param context "test" | "story"
+---@param opts table
+M.teleport = function(context, opts)
+  local teleporter = require("js-teleporter.teleporter")
 
-	--TODO
-	local context = "test"
+  local bufname = util.get_filename_on_current_buffer()
+  if not bufname then
+    return
+  end
 
-	local bufname = util.get_filename_on_current_buffer()
-	if not bufname then
-		return
-	end
+  if not teleporter.is_js_file(context, bufname) then
+    vim.api.nvim_err_writeln("[JSTeleporter] The file is not javascript/typescript. file: " .. bufname)
+    return
+  end
 
-	if not teleporter.is_js_file(context, bufname) then
-		vim.api.nvim_err_writeln("[JSTeleporter] The file is not javascript/typescript. file: " .. bufname)
-		return
-	end
+  -- TODO
+  local workspace_path = "/Users/ushmz/src/github.com/ushmz/varuna/"
 
-	-- TODO
-	local workspace_path = "/Users/ushmz/src/github.com/ushmz/varuna/"
-
-	-- TODO
-	local destination = teleporter.teleport_to(context, bufname, workspace_path)
-	if not destination then
-		if teleporter.is_other_context_file(context, bufname) then
-			vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
-			return
-		end
-		-- TODO
-		M.suggest_to_create_test(teleporter, bufname, workspace_path)
-		return
-	end
-	util.open_file(destination)
+  -- TODO
+  local destination = teleporter.teleport_to(context, bufname, workspace_path)
+  if not destination then
+    if teleporter.is_other_context_file(context, bufname) then
+      vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
+      return
+    end
+    -- TODO
+    M.suggest_to_create_test(teleporter, bufname, workspace_path)
+    return
+  end
+  util.open_file(destination)
 end
 
 return M

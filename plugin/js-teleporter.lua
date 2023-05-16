@@ -4,5 +4,5 @@ end
 vim.g.loaded_jsteleporter = 1
 
 vim.api.nvim_create_user_command("JSTeleporter", function(opts)
-  require("js-teleporter").teleport()
+  require("js-teleporter.command").run({ cmd = opts[0], args = opts })
 end, {})
