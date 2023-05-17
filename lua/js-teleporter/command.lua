@@ -19,14 +19,18 @@ setmetatable(_switch, _switch_metatable)
 
 local M = {}
 
+M.command_list = function ()
+  return vim.tbl_keys(_switch)
+end
+
 ---Run plugin command
 ---@param args table
 ---args ={
---- "cmd": "to_test_file",
+--- "cmd": "test",
 ---}
 M.run = function(args)
   local user_opts = args or {}
-  if next(user_opts) == nil and not user_opts.cmd then
+  if user_opts.cmd == nil then
     vim.api.nvim_err_writeln("[JSTeleporter] No command specified")
     return
   end

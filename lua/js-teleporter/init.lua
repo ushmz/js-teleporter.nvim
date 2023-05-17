@@ -8,12 +8,12 @@ M.setup = function(opts)
 end
 
 ---Suggest user to create new file if the destination file is not found
+---@param context string
 ---@param teleporter any
 ---@param filename string
 ---@param workspace_path string
-M.suggest_to_create_test = function(teleporter, filename, workspace_path)
+M.suggest_to_create_test = function(context, teleporter, filename, workspace_path)
   -- TODO
-  local context = "tests"
   local suggestion_paths = teleporter.suggest_other_context_paths(context, filename, workspace_path)
   if #suggestion_paths == 0 then
     vim.api.nvim_echo({ { "[JSTeleporter] destination is not found", "Normal" } }, true, {})
@@ -57,17 +57,15 @@ M.teleport = function(context, opts)
   end
 
   -- TODO
-  local workspace_path = "/Users/ushmz/src/github.com/ushmz/varuna/"
+  local workspace_path = vim.api.nvim_call_function("getcwd", {})
 
-  -- TODO
   local destination = teleporter.teleport_to(context, bufname, workspace_path)
   if not destination then
     if teleporter.is_other_context_file(context, bufname) then
       vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
       return
     end
-    -- TODO
-    M.suggest_to_create_test(teleporter, bufname, workspace_path)
+    M.suggest_to_create_test(context, teleporter, bufname, workspace_path)
     return
   end
   util.open_file(destination)

@@ -58,13 +58,12 @@ local find_other_context_root_dir_name = function(context, current_dir)
     return
   end
 
-  local files = util.scan_dir(current_dir)
-  for _, file in ipairs(files) do
+  -- NOTE : `util.scan_dir()` returns only directories
+  local dirs = util.scan_dir(current_dir)
+  for _, file in ipairs(dirs) do
     for _, v in ipairs(roots_in_context(context)) do
-      if v == file then
-        if util.is_dir(current_dir .. util.get_os_sep() .. file) then
-          return v
-        end
+      if current_dir .. util.get_os_sep() .. v == file then
+        return v
       end
     end
   end
@@ -162,59 +161,107 @@ Teleporter.to_other_context = function(context, filepath, workspace_path)
     return dir .. sep .. other_context_basename
   end
 
-  -- (this.shavePathFromStart(filepath, baseRoot).replace(new RegExp(`^${this.root}${path.sep}?`), ''));
-  local context_root = Teleporter.find_other_context_root(context, workspace_path)
+  local context_root = Teleporter.find_other_context_root(context, dir, workspace_path)
   if not context_root then
     return
   end
-  local key_path = vim.fn.fnamemodify(
-    Teleporter.shave_path_from_start("", context_root[0]):gsub("^" .. conf.source_root .. sep, ""),
-    ":h"
-  )
+
+  local shaved = Teleporter.shave_path_from_start(filepath, context_root[0])
+  local key_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. sep, ""), ":h")
 
   local other_context_key_path = dir .. sep .. roots_in_context(context) .. key_path
   local other_context_include_root_path = dir .. sep .. roots_in_context(context) .. conf.source_root .. key_path
 
   -- foo/bar/src/foobar.ts → foo/bar/__${other_context}__/foobar.otherworld.ts
+  print("Check: ", other_context_key_path .. sep .. other_context_basename)
   if util.exists(other_context_key_path .. sep .. other_context_basename) then
     return other_context_key_path .. sep .. other_context_basename
   end
+  print("Not found")
 
   -- foo/bar/src/foobar.ts → foo/bar/__otherworld__/foobar.ts
+  print("Check: ", other_context_key_path .. sep .. basename)
   if util.exists(other_context_key_path .. sep .. basename) then
     return other_context_key_path .. sep .. basename
   end
+  print("Not found")
 
   -- foo/bar/src/foobar.ts → foo/bar/__otherworld__/src/foobar.otherworld.ts
+  print("Check: ", other_context_include_root_path .. sep .. other_context_basename)
   if util.exists(other_context_include_root_path .. sep .. other_context_basename) then
     return other_context_include_root_path .. sep .. other_context_basename
   end
+  print("Not found")
 
   -- foo/bar/src/foobar.ts → foo/bar/__otherworld__/src/foobar.ts
+  print("Check: ", other_context_include_root_path .. sep .. basename)
   if util.exists(other_context_include_root_path .. sep .. basename) then
     return other_context_include_root_path .. sep .. basename
   end
+  print("Not found")
 
   return nil
 end
 
+---@param context "test" | "story"
+---@param filepath string
+---@param workspace_path string
+---@return string | nil
 Teleporter.from_other_context = function(context, filepath, workspace_path)
+  local conf = get_config()
+  local sep = util.get_os_sep()
+
   local filename = util.get_basename(filepath)
+  local dir = vim.fn.fnamemodify(filepath, ":h")
   local ext = util.get_extension(filepath)
   local suffix_removed = filename:gsub(suffix_in_context(context) .. "$", "") .. ext
 
+  local target = ""
   if Teleporter.is_in_context(context, filepath) then
-    local dir = Teleporter.find_other_context_root(filepath)
+    local context_root = Teleporter.find_other_context_root(context, dir)
+
+    if not context_root then
+      vim.api.nvim_err_writeln("[JSTeleporter] Cannot determin context root directory.")
+      return nil
+    end
+
+    local shaved = Teleporter.shave_path_from_start(filepath, context_root[0])
+    local key_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. sep, ""), ":h")
+    local src_root_path = conf.source_root .. sep .. key_path
+
+    -- foo/bar/__otherworld__/foobar.otherworld.ts → foo/bar/src/foobar.ts
+    target = context_root[0] .. sep .. src_root_path .. sep .. suffix_removed
+    if util.exists(target) then
+      return target
+    end
+
+    -- foo/bar/__otherworld__/foobar.otherworld.ts → foo/bar/foobar.ts
+    target = context_root[0] .. sep .. key_path .. sep .. suffix_removed
+    if util.exists(target) then
+      return target
+    end
   end
+
+  -- explorer same folder
+  target = dir .. sep .. suffix_removed
+  if util.exists(target) then
+    return target
+  end
+
+  return nil
 end
 
 Teleporter.suggest_other_context_paths = function(context, filename, workspace_path)
   return { "__tests__/lib/index.test.ts" }
 end
 
+---@param context "test" | "story"
+---@param current_dir string
+---@param limit_dir string?
+---@return table | nil
 Teleporter.find_other_context_root = function(context, current_dir, limit_dir)
   -- TODO
-  local root = "/"
+  local root = string.sub(current_dir, 1, 1)
 
   while true do
     local other_context_root = find_other_context_root_dir_name(context, current_dir)
@@ -223,12 +270,12 @@ Teleporter.find_other_context_root = function(context, current_dir, limit_dir)
     end
 
     if limit_dir ~= nil and util.is_same_dir(current_dir, limit_dir) then
-      vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
       return nil
     end
 
     if util.is_same_dir(current_dir, root) then
-      vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
+      -- If the directory that specified in `test_source_roots` or `storybook_source_roots` does not exist,
+      -- reach here. If it should not be cought as an error, please suppress this error message.
       return nil
     end
 
@@ -240,7 +287,9 @@ end
 ---@param shaver_path string
 ---@return string
 Teleporter.shave_path_from_start = function(target, shaver_path)
+  print(target, "split(" .. util.get_os_sep() .. ")")
   local target_elements = util.split(target, util.get_os_sep())
+  print(shaver_path, "split(" .. util.get_os_sep() .. ")")
   local shaver_elements = util.split(shaver_path, util.get_os_sep())
 
   local match_index = 0
