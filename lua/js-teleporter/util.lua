@@ -24,6 +24,7 @@ M.get_basename = function(file)
   return table.concat(parts, ".")
 end
 
+---@return boolean
 M.is_dir = function(path)
   if require("plenary.path").is_path(path) then
     return require("plenary.path").is_dir(path)
@@ -31,6 +32,9 @@ M.is_dir = function(path)
   return require("plenary.path"):new(path):is_dir()
 end
 
+---@param dir1 string
+---@param dir2 string
+---@return boolean
 M.is_same_dir = function(dir1, dir2)
   local stat1 = vim.loop.fs_stat(dir1)
   local stat2 = vim.loop.fs_stat(dir2)
@@ -41,10 +45,14 @@ M.is_same_dir = function(dir1, dir2)
   end
 end
 
+---@param dir string
+---@return table
 M.scan_dir = function(dir)
   return require("plenary.scandir").scan_dir(dir, { only_dirs = true, depth = 1 })
 end
 
+---@param filepath string
+---@return boolean
 M.exists = function(filepath)
   -- [TODO] This puts error message, suppress message and go through
   -- require("plenary.path").exists(filepath)

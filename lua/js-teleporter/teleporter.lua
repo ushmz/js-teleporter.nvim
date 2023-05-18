@@ -80,7 +80,7 @@ Teleporter.teleport_to = function(context, filename, workspace_path)
   end
 
   if Teleporter.is_other_context_file(context, filename) then
-    return Teleporter.from_other_context(filename, workspace_path)
+    return Teleporter.from_other_context(context, filename, workspace_path)
   else
     return Teleporter.to_other_context(context, filename, workspace_path)
   end
@@ -251,8 +251,46 @@ Teleporter.from_other_context = function(context, filepath, workspace_path)
   return nil
 end
 
-Teleporter.suggest_other_context_paths = function(context, filename, workspace_path)
-  return { "__tests__/lib/index.test.ts" }
+Teleporter._get_suggestion_in_other_context = function(context, filepath, workspace_path)
+  local conf = get_config()
+  local sep = util.get_os_sep()
+
+  local context_root = Teleporter.find_other_context_root(context, filepath, workspace_path)
+  if not context_root then
+    return
+  end
+
+  local shaved_path = Teleporter.shave_path_from_start(filepath, context_root[0])
+  local key_path = vim.fn.fnamemodify(string.gsub(shaved_path, "^" .. conf.source_root .. sep .. "?", ""), ":h")
+
+  local other_context_key_path = context_root[0] .. sep .. context_root[1]
+  local other_context_root_path = context_root[0] .. sep .. conf.source_root
+
+  local test_file_name = util.get_basename(filepath) .. suffix_in_context(context) .. util.get_extension(filepath)
+
+  if util.exists(other_context_root_path) then
+    return other_context_key_path .. sep .. key_path .. sep .. test_file_name
+  else
+    return other_context_key_path .. sep .. key_path .. test_file_name
+  end
+end
+
+---@param context "test" | "story
+---@param filepath string
+---@param workspace_path string
+---@return table {absolute_path, relative_path}[]
+Teleporter.suggest_other_context_paths = function(context, filepath, workspace_path)
+  -- return { "__tests__/lib/index.test.ts" }
+  if not util.is_js_file(filepath) then
+    return {}
+  end
+
+  if Teleporter.is_other_context_file(context, filepath) then
+    return {}
+  else
+    -- HELPME!!
+    local suggestion = Teleporter._get_suggestion_in_other_context(context, filepath, workspace_path)
+  end
 end
 
 ---@param context "test" | "story"
