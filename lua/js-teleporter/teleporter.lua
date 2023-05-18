@@ -1,4 +1,5 @@
 local util = require("js-teleporter.util")
+local Path = require("plenary.path")
 
 local Teleporter = {}
 
@@ -53,13 +54,16 @@ local suffix_in_context = function(context)
   return suffix
 end
 
+---@param context "test" | "story"
+---@param current_dir Path
+---@return string | nil
 local find_other_context_root_dir_name = function(context, current_dir)
-  if not util.is_dir(current_dir) then
+  if not current_dir:is_dir() then
     return
   end
 
   -- NOTE : `util.scan_dir()` returns only directories
-  local dirs = util.scan_dir(current_dir)
+  local dirs = util.scan_dir(current_dir.filename)
   for _, file in ipairs(dirs) do
     for _, v in ipairs(roots_in_context(context)) do
       if current_dir .. util.get_os_sep() .. v == file then
@@ -149,56 +153,58 @@ end
 ---@return string | nil
 Teleporter.to_other_context = function(context, filepath, workspace_path)
   local conf = get_config()
-  local sep = util.get_os_sep()
 
-  local dir = vim.fn.fnamemodify(filepath, ":h")
-  local ext = util.get_extension(filepath)
-  local filename = Teleporter.shave_path_from_start(filepath, dir)
+  local path = Path:new(filepath)
+  local sep = Path.path.sep
+
+  local parent = path:parent()
+  local ext = util.get_extension(path.filename)
+
+  local filename = Teleporter.shave_path_from_start(path, parent)
   local basename = util.get_basename(filename)
 
-  local other_context_basename = basename .. suffix_in_context(context) .. ext
-  if util.exists(dir .. sep .. other_context_basename) then
-    return dir .. sep .. other_context_basename
+  local context_basename = basename .. suffix_in_context(context) .. ext
+
+  -- Check if it is on same directory
+  local context_path = parent:joinpath(context_basename)
+  if context_path:exists() then
+    return context_path.filename
   end
 
-  local context_root = Teleporter.find_other_context_root(context, dir, workspace_path)
+  local context_root = Teleporter.find_other_context_root(context, parent, Path:new(workspace_path))
   if not context_root then
     return
   end
 
-  local shaved = Teleporter.shave_path_from_start(filepath, context_root[0])
+  local shaved = Teleporter.shave_path_from_start(path, context_root[1])
   local key_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. sep, ""), ":h")
 
-  local other_context_key_path = dir .. sep .. roots_in_context(context) .. key_path
-  local other_context_include_root_path = dir .. sep .. roots_in_context(context) .. conf.source_root .. key_path
+  local context_key_path = parent:joinpath(context_root[2], key_path)
+  local context_include_root_path = parent:joinpath(context_root[2], conf.source_root, key_path)
 
   -- foo/bar/src/foobar.ts → foo/bar/__${other_context}__/foobar.otherworld.ts
-  print("Check: ", other_context_key_path .. sep .. other_context_basename)
-  if util.exists(other_context_key_path .. sep .. other_context_basename) then
-    return other_context_key_path .. sep .. other_context_basename
+  context_path = context_key_path:joinpath(context_basename)
+  if context_path:exists() then
+    return context_path.filename
   end
-  print("Not found")
 
   -- foo/bar/src/foobar.ts → foo/bar/__otherworld__/foobar.ts
-  print("Check: ", other_context_key_path .. sep .. basename)
-  if util.exists(other_context_key_path .. sep .. basename) then
-    return other_context_key_path .. sep .. basename
+  context_path = context_key_path:joinpath(basename)
+  if context_path:exists() then
+    return context_path.filename
   end
-  print("Not found")
 
   -- foo/bar/src/foobar.ts → foo/bar/__otherworld__/src/foobar.otherworld.ts
-  print("Check: ", other_context_include_root_path .. sep .. other_context_basename)
-  if util.exists(other_context_include_root_path .. sep .. other_context_basename) then
-    return other_context_include_root_path .. sep .. other_context_basename
+  context_path = context_include_root_path:joinpath(context_basename)
+  if context_path:exists() then
+    return context_path.filename
   end
-  print("Not found")
 
   -- foo/bar/src/foobar.ts → foo/bar/__otherworld__/src/foobar.ts
-  print("Check: ", other_context_include_root_path .. sep .. basename)
-  if util.exists(other_context_include_root_path .. sep .. basename) then
-    return other_context_include_root_path .. sep .. basename
+  context_path = context_include_root_path:joinpath(basename)
+  if context_path:exists() then
+    return context_path.filename
   end
-  print("Not found")
 
   return nil
 end
@@ -275,31 +281,44 @@ Teleporter._get_suggestion_in_other_context = function(context, filepath, worksp
   end
 end
 
+Teleporter._get_suggestion_in_same_dir = function(context, filepath, workspace_path)
+  local path = Path:new(filepath)
+  local other_context_filename = path.filename .. "." .. suffix_in_context(context) .. util.get_extension(filepath)
+
+  return Path:joinpath(path:parent(), other_context_filename).filename
+end
+
 ---@param context "test" | "story
 ---@param filepath string
 ---@param workspace_path string
 ---@return table {absolute_path, relative_path}[]
 Teleporter.suggest_other_context_paths = function(context, filepath, workspace_path)
+  local context_paths = {}
   -- return { "__tests__/lib/index.test.ts" }
   if not util.is_js_file(filepath) then
-    return {}
+    return context_paths
   end
 
   if Teleporter.is_other_context_file(context, filepath) then
-    return {}
+    return context_paths
   else
     -- HELPME!!
     local suggestion = Teleporter._get_suggestion_in_other_context(context, filepath, workspace_path)
+    if not suggestion then
+      suggestion = Teleporter._get_suggestion_in_same_dir(context, filepath, workspace_path)
+    end
+
+    local relative_path = Teleporter.shave_path_from_start(suggestion, workspace_path)
+    return { suggestion, relative_path }
   end
 end
 
 ---@param context "test" | "story"
----@param current_dir string
----@param limit_dir string?
----@return table | nil
+---@param current_dir Path
+---@param limit_dir Path?
+---@return {[1]: Path, [2]: string} | nil
 Teleporter.find_other_context_root = function(context, current_dir, limit_dir)
-  -- TODO
-  local root = string.sub(current_dir, 1, 1)
+  local root = current_dir.path.root()
 
   while true do
     local other_context_root = find_other_context_root_dir_name(context, current_dir)
@@ -307,28 +326,24 @@ Teleporter.find_other_context_root = function(context, current_dir, limit_dir)
       return { current_dir, other_context_root }
     end
 
-    if limit_dir ~= nil and util.is_same_dir(current_dir, limit_dir) then
+    -- If the directory that specified in `test_source_roots` or `storybook_source_roots` does not exist,
+    -- one of the following will occur. If it should not be cought as an error, please suppress this error message.
+    if limit_dir ~= nil and current_dir.filename == limit_dir.filename then
       return nil
     end
 
-    if util.is_same_dir(current_dir, root) then
-      -- If the directory that specified in `test_source_roots` or `storybook_source_roots` does not exist,
-      -- reach here. If it should not be cought as an error, please suppress this error message.
+    if util.is_same_dir(current_dir.filename, root) then
       return nil
     end
 
-    current_dir = vim.fn.fnamemodify(current_dir, ":h")
+    current_dir = current_dir:parent()
   end
 end
 
----@param target string
----@param shaver_path string
 ---@return string
 Teleporter.shave_path_from_start = function(target, shaver_path)
-  print(target, "split(" .. util.get_os_sep() .. ")")
-  local target_elements = util.split(target, util.get_os_sep())
-  print(shaver_path, "split(" .. util.get_os_sep() .. ")")
-  local shaver_elements = util.split(shaver_path, util.get_os_sep())
+  local target_elements = util.split(target.filename, target.path.sep)
+  local shaver_elements = util.split(shaver_path.filename, shaver_path.path.sep)
 
   local match_index = 0
   for i, v in ipairs(target_elements) do
