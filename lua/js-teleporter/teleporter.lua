@@ -155,7 +155,7 @@ Teleporter.to_other_context = function(context, filepath, workspace_path)
   local conf = get_config()
 
   local path = Path:new(filepath)
-  local sep = Path.path.sep
+  local sep = path.sep
 
   local parent = path:parent()
   local ext = util.get_extension(path.filename)
@@ -165,7 +165,7 @@ Teleporter.to_other_context = function(context, filepath, workspace_path)
 
   local context_basename = basename .. suffix_in_context(context) .. ext
 
-  -- Check if it is on same directory
+  -- Check if the other context file is in the same directory
   local context_path = parent:joinpath(context_basename)
   if context_path:exists() then
     return context_path.filename
@@ -176,11 +176,11 @@ Teleporter.to_other_context = function(context, filepath, workspace_path)
     return
   end
 
-  local shaved = Teleporter.shave_path_from_start(path, context_root[1])
+  local shaved = Teleporter.shave_path_from_start(path, context_root.absolute)
   local key_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. sep, ""), ":h")
 
-  local context_key_path = parent:joinpath(context_root[2], key_path)
-  local context_include_root_path = parent:joinpath(context_root[2], conf.source_root, key_path)
+  local context_key_path = parent:joinpath(context_root.relative, key_path)
+  local context_include_root_path = parent:joinpath(context_root.relative, conf.source_root, key_path)
 
   -- foo/bar/src/foobar.ts → foo/bar/__${other_context}__/foobar.otherworld.ts
   context_path = context_key_path:joinpath(context_basename)
@@ -215,48 +215,52 @@ end
 ---@return string | nil
 Teleporter.from_other_context = function(context, filepath, workspace_path)
   local conf = get_config()
-  local sep = util.get_os_sep()
 
-  local filename = util.get_basename(filepath)
-  local dir = vim.fn.fnamemodify(filepath, ":h")
+  local path = Path:new(filepath)
+  local sep = path.sep
+
+  local parent = path:parent()
   local ext = util.get_extension(filepath)
-  local suffix_removed = filename:gsub(suffix_in_context(context) .. "$", "") .. ext
 
-  local target = ""
+  local filename = Teleporter.shave_path_from_start(path, parent)
+  local basename = util.get_basename(filename)
+
+  local suffix_removed = string.gsub(basename, suffix_in_context(context) .. "$", "") .. ext
+
   if Teleporter.is_in_context(context, filepath) then
-    local context_root = Teleporter.find_other_context_root(context, dir)
-
+    local context_root = Teleporter.find_other_context_root(context, parent)
     if not context_root then
-      vim.api.nvim_err_writeln("[JSTeleporter] Cannot determin context root directory.")
+      -- vim.api.nvim_err_writeln("[JSTeleporter] Cannot determin context root directory.")
       return nil
     end
 
-    local shaved = Teleporter.shave_path_from_start(filepath, context_root[0])
+    local shaved = Teleporter.shave_path_from_start(filepath, context_root.absolute)
     local key_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. sep, ""), ":h")
     local src_root_path = conf.source_root .. sep .. key_path
 
     -- foo/bar/__otherworld__/foobar.otherworld.ts → foo/bar/src/foobar.ts
-    target = context_root[0] .. sep .. src_root_path .. sep .. suffix_removed
-    if util.exists(target) then
-      return target
+    local target = context_root.absolute:joinpath(src_root_path, suffix_removed)
+    if util.exists(target.filename) then
+      return target.filename
     end
 
     -- foo/bar/__otherworld__/foobar.otherworld.ts → foo/bar/foobar.ts
-    target = context_root[0] .. sep .. key_path .. sep .. suffix_removed
-    if util.exists(target) then
-      return target
+    target = context_root.absolute:joinpath(key_path, suffix_removed)
+    if util.exists(target.filename) then
+      return target.filename
     end
   end
 
   -- explorer same folder
-  target = dir .. sep .. suffix_removed
-  if util.exists(target) then
-    return target
+  local target = parent:joinpath(suffix_removed)
+  if util.exists(target.filename) then
+    return target.filename
   end
 
   return nil
 end
 
+-- TODO: fix to use plenary.nvim
 Teleporter._get_suggestion_in_other_context = function(context, filepath, workspace_path)
   local conf = get_config()
   local sep = util.get_os_sep()
@@ -266,11 +270,11 @@ Teleporter._get_suggestion_in_other_context = function(context, filepath, worksp
     return
   end
 
-  local shaved_path = Teleporter.shave_path_from_start(filepath, context_root[0])
+  local shaved_path = Teleporter.shave_path_from_start(filepath, context_root.absolute)
   local key_path = vim.fn.fnamemodify(string.gsub(shaved_path, "^" .. conf.source_root .. sep .. "?", ""), ":h")
 
-  local other_context_key_path = context_root[0] .. sep .. context_root[1]
-  local other_context_root_path = context_root[0] .. sep .. conf.source_root
+  local other_context_key_path = context_root.absolute .. sep .. context_root.relative
+  local other_context_root_path = context_root.absolute .. sep .. conf.source_root
 
   local test_file_name = util.get_basename(filepath) .. suffix_in_context(context) .. util.get_extension(filepath)
 
@@ -316,14 +320,14 @@ end
 ---@param context "test" | "story"
 ---@param current_dir Path
 ---@param limit_dir Path?
----@return {[1]: Path, [2]: string} | nil
+---@return {absolute: Path, relative: string} | nil
 Teleporter.find_other_context_root = function(context, current_dir, limit_dir)
   local root = current_dir.path.root()
 
   while true do
     local other_context_root = find_other_context_root_dir_name(context, current_dir)
     if other_context_root then
-      return { current_dir, other_context_root }
+      return { absolute = current_dir, relative = other_context_root }
     end
 
     -- If the directory that specified in `test_source_roots` or `storybook_source_roots` does not exist,
