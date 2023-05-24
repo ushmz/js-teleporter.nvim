@@ -1,4 +1,5 @@
 local Path = require("plenary.path")
+local sep = Path.path.sep
 
 Teleporter = {}
 
@@ -13,9 +14,9 @@ Teleporter.roots_in_context = function(context)
   local conf = Teleporter.get_config()
   local roots = {}
   if context == "test" then
-    roots = conf.test_source_roots
+    roots = conf.test_roots
   elseif context == "story" then
-    roots = conf.storybook_source_roots
+    roots = conf.story_roots
   end
 
   return roots
@@ -29,9 +30,9 @@ Teleporter.extensions_in_context = function(context)
 
   local extensions = {}
   if context == "test" then
-    extensions = conf.extensions_for_test
+    extensions = conf.test_extensions
   elseif context == "story" then
-    extensions = conf.extensions_for_storybook
+    extensions = conf.story_extensions
   end
 
   return extensions
@@ -138,8 +139,6 @@ end
 ---@param filepath string
 ---@return boolean
 Teleporter.is_in_context = function(context, filepath)
-  local sep = Teleporter.get_os_sep()
-
   for _, v in ipairs(Teleporter.roots_in_context(context)) do
     --TODO: filepath:match("[/^]..v..[/$]") doesn't work as expected
     if filepath:match(sep .. v .. sep) then
@@ -170,7 +169,6 @@ Teleporter.shave_path_from_start = function(target, shaver_path)
     return target.filename
   end
 
-  local sep = Teleporter.get_os_sep()
   local target_elements = Teleporter.split(target.filename, sep)
   local shaver_elements = Teleporter.split(shaver_path.filename, sep)
 
@@ -208,14 +206,14 @@ end
 ---@param context "test" | "story"
 ---@param current_dir Path
 ---@param limit_dir Path?
----@return {base_dir: Path, context_root: string} | nil
+---@return { base_dir: Path, dir_name: string } | nil
 Teleporter.find_other_context_root = function(context, current_dir, limit_dir)
   local root = Path.path.root()
 
   while true do
     local other_context_root = Teleporter.find_other_context_root_dir_name(context, current_dir)
     if other_context_root then
-      return { base_dir = current_dir, context_root = other_context_root }
+      return { base_dir = current_dir, dir_name = other_context_root }
     end
 
     -- If the directory that specified in `test_source_roots` or `storybook_source_roots` does not exist,
@@ -252,7 +250,6 @@ end
 ---@return Path | nil
 Teleporter.get_suggestion_in_other_context = function(context, filepath, workspace_path)
   local conf = Teleporter.get_config()
-  local sep = Teleporter.get_os_sep()
 
   local context_root = Teleporter.find_other_context_root(context, filepath, workspace_path)
   if not context_root then
@@ -262,8 +259,8 @@ Teleporter.get_suggestion_in_other_context = function(context, filepath, workspa
   local shaved_path = Teleporter.shave_path_from_start(filepath, context_root.base_dir)
   local key_path = vim.fn.fnamemodify(string.gsub(shaved_path, "^" .. conf.source_root .. sep .. "?", ""), ":h")
 
-  local context_key_path = context_root.base_dir:joinpath(context_root.context_root)
-  local source_root_included = context_root.base_dir:joinpath(context_root.context_root, conf.source_root)
+  local context_key_path = context_root.base_dir:joinpath(context_root.dir_name)
+  local source_root_included = context_root.base_dir:joinpath(context_root.dir_name, conf.source_root)
 
   local context_filename = Teleporter.get_basename(filepath.filename)
     .. Teleporter.suffix_in_context(context)
@@ -285,7 +282,6 @@ Teleporter.to_other_context = function(context, destination, workspace_path)
   local conf = Teleporter.get_config()
 
   local path = Path:new(destination)
-  local sep = Path.path.sep
 
   local parent = path:parent()
   local ext = Teleporter.get_extension(path.filename)
@@ -307,31 +303,31 @@ Teleporter.to_other_context = function(context, destination, workspace_path)
   end
 
   local shaved = Teleporter.shave_path_from_start(path, context_root.base_dir)
-  local key_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. sep, ""), ":h")
+  local symmetry_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. sep, ""), ":h")
 
-  local symmetry_path = context_root.base_dir:joinpath(context_root.context_root, key_path)
-  local symmetry_path_with_root = context_root.base_dir:joinpath(context_root.context_root, conf.source_root, key_path)
+  local key_path = context_root.base_dir:joinpath(context_root.dir_name, symmetry_path)
+  local key_path_with_root = context_root.base_dir:joinpath(context_root.dir_name, conf.source_root, symmetry_path)
 
   -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/foobar.suffix.ts
-  context_path = symmetry_path:joinpath(context_basename)
+  context_path = key_path:joinpath(context_basename)
   if context_path:exists() then
     return context_path.filename
   end
 
   -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/foobar.ts
-  context_path = symmetry_path:joinpath(basename)
+  context_path = key_path:joinpath(basename)
   if context_path:exists() then
     return context_path.filename
   end
 
   -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/src/foobar.suffix.ts
-  context_path = symmetry_path_with_root:joinpath(context_basename)
+  context_path = key_path_with_root:joinpath(context_basename)
   if context_path:exists() then
     return context_path.filename
   end
 
   -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/src/foobar.ts
-  context_path = symmetry_path_with_root:joinpath(basename)
+  context_path = key_path_with_root:joinpath(basename)
   if context_path:exists() then
     return context_path.filename
   end
@@ -347,7 +343,6 @@ Teleporter.from_other_context = function(context, destination, workspace_path)
   local conf = Teleporter.get_config()
 
   local path = Path:new(destination)
-  local sep = path.sep
 
   local parent = path:parent()
   local ext = Teleporter.get_extension(destination)
@@ -360,22 +355,21 @@ Teleporter.from_other_context = function(context, destination, workspace_path)
   if Teleporter.is_in_context(context, destination) then
     local context_root = Teleporter.find_other_context_root(context, parent)
     if not context_root then
-      -- vim.api.nvim_err_writeln("[JSTeleporter] Cannot determin context root directory.")
       return nil
     end
 
     local shaved = Teleporter.shave_path_from_start(path, context_root.base_dir)
-    local key_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. sep, ""), ":h")
-    local src_root_path = conf.source_root .. sep .. key_path
+    local symmetry_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. context_root.dir_name .. sep, ""), ":h")
+    local symmetry_path_with_root = conf.source_root .. sep .. symmetry_path
 
-    -- foo/bar/__otherworld__/foobar.otherworld.ts → foo/bar/src/foobar.ts
-    local target = context_root.base_dir:joinpath(src_root_path, suffix_removed)
+    -- foo/bar/${context_root}/foobar.suffix.ts -> foo/bar/src/foobar.ts
+    local target = context_root.base_dir:joinpath(symmetry_path_with_root, suffix_removed)
     if Teleporter.exists(target.filename) then
       return target.filename
     end
 
-    -- foo/bar/__otherworld__/foobar.otherworld.ts → foo/bar/foobar.ts
-    target = context_root.base_dir:joinpath(key_path, suffix_removed)
+    -- foo/bar/${context_root}/foobar.suffix.ts -> foo/bar/foobar.ts
+    target = context_root.base_dir:joinpath(symmetry_path, suffix_removed)
     if Teleporter.exists(target.filename) then
       return target.filename
     end
