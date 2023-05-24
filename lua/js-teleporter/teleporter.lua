@@ -309,29 +309,29 @@ Teleporter.to_other_context = function(context, destination, workspace_path)
   local shaved = Teleporter.shave_path_from_start(path, context_root.base_dir)
   local key_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. sep, ""), ":h")
 
-  local context_key_path = parent:joinpath(context_root.context_root, key_path)
-  local context_include_root_path = parent:joinpath(context_root.context_root, conf.source_root, key_path)
+  local symmetry_path = context_root.base_dir:joinpath(context_root.context_root, key_path)
+  local symmetry_path_with_root = context_root.base_dir:joinpath(context_root.context_root, conf.source_root, key_path)
 
-  -- foo/bar/src/foobar.ts → foo/bar/__${other_context}__/foobar.otherworld.ts
-  context_path = context_key_path:joinpath(context_basename)
+  -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/foobar.suffix.ts
+  context_path = symmetry_path:joinpath(context_basename)
   if context_path:exists() then
     return context_path.filename
   end
 
-  -- foo/bar/src/foobar.ts → foo/bar/__otherworld__/foobar.ts
-  context_path = context_key_path:joinpath(basename)
+  -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/foobar.ts
+  context_path = symmetry_path:joinpath(basename)
   if context_path:exists() then
     return context_path.filename
   end
 
-  -- foo/bar/src/foobar.ts → foo/bar/__otherworld__/src/foobar.otherworld.ts
-  context_path = context_include_root_path:joinpath(context_basename)
+  -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/src/foobar.suffix.ts
+  context_path = symmetry_path_with_root:joinpath(context_basename)
   if context_path:exists() then
     return context_path.filename
   end
 
-  -- foo/bar/src/foobar.ts → foo/bar/__otherworld__/src/foobar.ts
-  context_path = context_include_root_path:joinpath(basename)
+  -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/src/foobar.ts
+  context_path = symmetry_path_with_root:joinpath(basename)
   if context_path:exists() then
     return context_path.filename
   end

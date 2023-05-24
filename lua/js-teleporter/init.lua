@@ -125,7 +125,6 @@ M.teleport = function(context, opts)
     return
   end
 
-  -- TODO
   local workspace_path = vim.api.nvim_call_function("getcwd", {})
 
   local destination = Teleporter.teleport_to(context, bufname, workspace_path)
