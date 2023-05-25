@@ -48,7 +48,7 @@ Teleporter.suffix_in_context = function(context)
   if context == "test" then
     suffix = conf.test_file_suffix
   elseif context == "story" then
-    suffix = conf.storybook_file_suffix
+    suffix = conf.story_file_suffix
   end
 
   return suffix
