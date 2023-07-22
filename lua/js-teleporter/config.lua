@@ -13,7 +13,7 @@ local teleporter_default = {
   test_file_suffix = ".test",
   -- Root directories of storybook.
   -- Files under configured directories are considered storybook.
-  story_root = { "stories" },
+  story_roots = { "stories" },
   -- Suffix to determine if the file is a storybook.
   story_file_suffix = ".stories",
   -- Extensions to determine if the file is a test file.

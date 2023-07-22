@@ -35,7 +35,7 @@ local create_file = function(filepath)
   end
 
   if filepath == "" then
-    vim.api.nvim_err_writeln("Please enter a valid file or folder name")
+    vim.api.nvim_err_writeln("[JSTeleporter] Please enter a valid file or folder name")
     return
   end
 
@@ -77,7 +77,7 @@ end
 M.suggest_to_create_test = function(context, teleporter, filename, workspace_path)
   local suggestion_paths = teleporter.suggest_other_context_paths(context, filename, workspace_path)
   if #suggestion_paths == 0 then
-    vim.api.nvim_echo({ { "[JSTeleporter] destination file is not found", "Error" } }, true, {})
+    vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
     return
   end
 
@@ -96,14 +96,14 @@ M.suggest_to_create_test = function(context, teleporter, filename, workspace_pat
     end
 
     if choice == "No" then
-      vim.api.nvim_echo({ { "\n[JSTeleporter] File is not created", "Normal" } }, true, {})
+      vim.api.nvim_echo({ "[JSTeleporter] File is not created.", "Normal" }, true, {})
       return
     end
 
     local path = create_file(choice)
     if path then
       open_file(path.filename)
-      vim.api.nvim_echo({ { '\n[JSTeleporter] "' .. choice .. '" created!', "Normal" } }, true, {})
+      vim.api.nvim_echo({ { '[JSTeleporter] "' .. choice .. '" created!', "Normal" } }, true, {})
     end
   end)
 end
@@ -121,7 +121,7 @@ M.teleport = function(context, opts)
   end
 
   if not Teleporter.is_js_file(context, bufname) then
-    vim.api.nvim_err_writeln("[JSTeleporter] The file is not javascript/typescript. file: " .. bufname)
+    vim.api.nvim_err_writeln("[JSTeleporter] The file is not javascript/typescript.")
     return
   end
 

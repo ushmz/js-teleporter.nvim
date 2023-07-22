@@ -48,7 +48,7 @@ Teleporter.suffix_in_context = function(context)
   if context == "test" then
     suffix = conf.test_file_suffix
   elseif context == "story" then
-    suffix = conf.storybook_file_suffix
+    suffix = conf.story_file_suffix
   end
 
   return suffix
@@ -235,12 +235,12 @@ end
 ---@param workspace_path Path
 ---@return Path
 Teleporter.get_suggestion_in_same_dir = function(context, filepath, workspace_path)
-  local other_context_filename = Teleporter.get_filename(filepath.filename)
-    .. "."
+  local parent = filepath:parent()
+  local other_context_filename = Teleporter.get_basename(filepath.filename)
     .. Teleporter.suffix_in_context(context)
     .. Teleporter.get_extension(filepath.filename)
 
-  return Path:joinpath(filepath:parent(), other_context_filename)
+  return parent:joinpath(other_context_filename)
 end
 
 ---comment
