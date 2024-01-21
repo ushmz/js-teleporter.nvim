@@ -3,14 +3,14 @@ local pathlib = require("js-teleporter.path")
 
 Teleporter = {}
 
-Teleporter.get_config = function()
+function Teleporter.get_config()
   return require("js-teleporter.config").values
 end
 
 ---Get roots in the context
 ---@param context "test" | "story"
 ---@return table
-Teleporter.roots_in_context = function(context)
+function Teleporter.roots_in_context(context)
   local conf = Teleporter.get_config()
   local roots = {}
   if context == "test" then
@@ -25,7 +25,7 @@ end
 ---Get extensions in the context
 ---@param context "test" | "story"
 ---@return table
-Teleporter.extensions_in_context = function(context)
+function Teleporter.extensions_in_context(context)
   local conf = Teleporter.get_config()
 
   local extensions = {}
@@ -41,7 +41,7 @@ end
 ---Get suffix in the context
 ---@param context "test" | "story"
 ---@return string
-Teleporter.suffix_in_context = function(context)
+function Teleporter.suffix_in_context(context)
   local conf = Teleporter.get_config()
 
   local suffix = ""
@@ -58,7 +58,7 @@ end
 ---@param context "test" | "story"
 ---@param filepath string
 ---@return boolean
-Teleporter.is_in_context = function(context, filepath)
+function Teleporter.is_in_context(context, filepath)
   for _, v in ipairs(Teleporter.roots_in_context(context)) do
     --TODO: filepath:match("[/^]..v..[/$]") doesn't work as expected
     if filepath:match(sep .. v .. sep) then
@@ -80,7 +80,7 @@ end
 ---@param context "test" | "story"
 ---@param current_dir string
 ---@return string | nil
-Teleporter.find_other_side_root_dir_name = function(context, current_dir)
+function Teleporter.find_other_side_root_dir_name(context, current_dir)
   if not pathlib.is_dir(current_dir) then
     return
   end
@@ -99,7 +99,7 @@ end
 ---@param current_dir string
 ---@param limit_dir string?
 ---@return { base_dir: string, dir_name: string } | nil
-Teleporter.find_other_side_root = function(context, current_dir, limit_dir)
+function Teleporter.find_other_side_root(context, current_dir, limit_dir)
   local root = pathlib.root
 
   while true do
@@ -126,7 +126,7 @@ end
 ---@param filename string
 ---@param workspace_dir string
 ---@return string
-Teleporter.get_suggestion_in_same_dir = function(context, filename, workspace_dir)
+function Teleporter.get_suggestion_in_same_dir(context, filename, workspace_dir)
   local parent = pathlib.parent_dir(filename)
   local other_context_filename = pathlib.basename(filename)
     .. Teleporter.suffix_in_context(context)
@@ -140,7 +140,7 @@ end
 ---@param filename string
 ---@param workspace_dir string
 ---@return string | nil
-Teleporter.get_suggestion_in_other_context = function(context, filename, workspace_dir)
+function Teleporter.get_suggestion_in_other_context(context, filename, workspace_dir)
   local conf = Teleporter.get_config()
 
   local context_root = Teleporter.find_other_side_root(context, filename, workspace_dir)
@@ -170,7 +170,7 @@ end
 ---@param destination string
 ---@param workspace_path string
 ---@return string | nil
-Teleporter.to_other_context = function(context, destination, workspace_path)
+function Teleporter.to_other_context(context, destination, workspace_path)
   local conf = Teleporter.get_config()
 
   local parent = pathlib.parent_dir(destination)
@@ -230,7 +230,7 @@ end
 ---@param destination string
 ---@param workspace_path string
 ---@return string | nil
-Teleporter.from_other_context = function(context, destination, workspace_path)
+function Teleporter.from_other_context(context, destination, workspace_path)
   local conf = Teleporter.get_config()
 
   local parent = pathlib.parent_dir(destination)
@@ -277,7 +277,7 @@ end
 ---@param context "test" | "story"
 ---@param filename string
 ---@param workspace_path string
-Teleporter.teleport_to = function(context, filename, workspace_path)
+function Teleporter.teleport_to(context, filename, workspace_path)
   if not Teleporter.is_js_file(context, filename) then
     vim.api.nvim_err_writeln("[JSTeleporter] The file is not javascript/typescript. file: " .. filename)
     return
@@ -294,7 +294,7 @@ end
 ---@param context "test" | "story"
 ---@param filename string
 ---@return boolean
-Teleporter.is_js_file = function(context, filename)
+function Teleporter.is_js_file(context, filename)
   local ext = pathlib.extension(filename)
   for _, v in ipairs(Teleporter.extensions_in_context(context)) do
     if v == ext then
@@ -325,7 +325,7 @@ end
 ---@param filename string
 ---@param workspace_dir string
 ---@return table {absolute_path, relative_path}[]
-Teleporter.suggest_other_context_paths = function(context, filename, workspace_dir)
+function Teleporter.suggest_other_context_paths(context, filename, workspace_dir)
   if not Teleporter.is_js_file(context, filename) then
     return {}
   end
@@ -351,15 +351,13 @@ local function build_instance_method(instance, bytecode_of_method)
   return load(bytecode_of_method, nil, "b", instance)
 end
 
-Teleporter.new = function(context)
+function Teleporter.new(context)
   local instance = {}
 
   instance.sep = sep
   instance.roots = Teleporter.roots_in_context(context)
   instance.extensions = Teleporter.extensions_in_context(context)
   instance.suffix = Teleporter.suffix_in_context(context)
-
-  setmetatable(instance, { __index = _ENV })
 
   instance.suggest_other_context_paths =
     build_instance_method(instance, string.dump(Teleporter.suggest_other_context_paths))
