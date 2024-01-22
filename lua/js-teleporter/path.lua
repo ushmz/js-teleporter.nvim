@@ -4,6 +4,50 @@ M._path = require("plenary.path")
 M.sep = M._path.path.sep
 M.root = M._path.path.root()
 
+---Split given charactors by given splitter
+---@param target string
+---@param splitter string
+---@return table
+function M.split(target, splitter)
+  local parts = {}
+  for part in string.gmatch(target, "([^" .. splitter .. "]+)") do
+    table.insert(parts, part)
+  end
+  return parts
+end
+
+---Get filename on current buffer. Return empty ("") if current buffer is empty.
+---@return string | nil
+function M.get_filename_on_current_buffer()
+  local bufnr = vim.api.nvim_get_current_buf()
+  if not bufnr then
+    return
+  end
+  return vim.api.nvim_buf_get_name(bufnr)
+end
+
+---Create new file with given path
+---@param filepath string
+---@return string | nil
+function M.create_file(filepath)
+  if not filepath or filepath == "" then
+    vim.api.nvim_err_writeln("[JSTeleporter] Please enter a valid file or folder name")
+    return
+  end
+
+  local path = M._path:new(filepath)
+  if M.exists(filepath) then
+    return filepath
+  end
+
+  if M.is_dir(filepath) then
+    M._path:new(filepath:sub(1, -2)):mkdir({ parents = true })
+  else
+    path:touch({ parents = true })
+  end
+  return path
+end
+
 ---Extract filename from filepath
 ---@param filepath string
 ---@return string
@@ -85,16 +129,43 @@ function M.exists(filepath)
   return M._path:new(filepath):exists()
 end
 
----Split given charactors by given splitter
+---Return if given filepath is in context
 ---@param target string
----@param splitter string
----@return table
-function M.split(target, splitter)
-  local parts = {}
-  for part in string.gmatch(target, "([^" .. splitter .. "]+)") do
-    table.insert(parts, part)
+---@param dir_names table
+---@return boolean
+function M.match_any(target, dir_names)
+  for _, v in ipairs(dir_names) do
+    if target:match(M.sep .. v .. M.sep) then
+      return true
+    end
+    if target:match("^" .. v .. M.sep) then
+      return true
+    end
+    if target:match(M.sep .. v .. "$") then
+      return true
+    end
+    if target:match("^" .. v .. "$") then
+      return true
+    end
   end
-  return parts
+  return false
+end
+
+---Find first matched directory in current directory if exists, otherwise return nil
+---@param current_dir string
+---@param dir_names table
+---@return string | nil
+function M.find_any(current_dir, dir_names)
+  if not M.is_dir(current_dir) then
+    return
+  end
+
+  local dirs = M.list_dir(current_dir)
+  for _, context_root in ipairs(dir_names) do
+    if vim.tbl_contains(dirs, M.join_path(current_dir, context_root)) then
+      return context_root
+    end
+  end
 end
 
 ---Trim unmatched child path from given base path

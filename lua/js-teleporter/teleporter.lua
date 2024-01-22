@@ -1,4 +1,3 @@
-local sep = require("js-teleporter.path").sep
 local pathlib = require("js-teleporter.path")
 
 Teleporter = {}
@@ -54,45 +53,12 @@ function Teleporter.suffix_in_context(context)
   return suffix
 end
 
----Return true if the other context file is opened in current buffer
+---Return true if the file under the context is opened in current buffer
 ---@param context "test" | "story"
 ---@param filepath string
 ---@return boolean
 function Teleporter.is_in_context(context, filepath)
-  for _, v in ipairs(Teleporter.roots_in_context(context)) do
-    --TODO: filepath:match("[/^]..v..[/$]") doesn't work as expected
-    if filepath:match(sep .. v .. sep) then
-      return true
-    end
-    if filepath:match("^" .. v .. sep) then
-      return true
-    end
-    if filepath:match(sep .. v .. "$") then
-      return true
-    end
-    if filepath:match("^" .. v .. "$") then
-      return true
-    end
-  end
-  return false
-end
-
----@param context "test" | "story"
----@param current_dir string
----@return string | nil
-function Teleporter.find_other_side_root_dir_name(context, current_dir)
-  if not pathlib.is_dir(current_dir) then
-    return
-  end
-
-  local dirs = pathlib.list_dir(current_dir)
-  for _, file in ipairs(dirs) do
-    for _, v in ipairs(Teleporter.roots_in_context(context)) do
-      if current_dir .. sep .. v == file then
-        return v
-      end
-    end
-  end
+  return pathlib.match_any(filepath, Teleporter.roots_in_context(context))
 end
 
 ---@param context "test" | "story"
@@ -101,9 +67,10 @@ end
 ---@return { base_dir: string, dir_name: string } | nil
 function Teleporter.find_other_side_root(context, current_dir, limit_dir)
   local root = pathlib.root
+  local context_roots = Teleporter.roots_in_context(context)
 
   while true do
-    local other_context_root = Teleporter.find_other_side_root_dir_name(context, current_dir)
+    local other_context_root = pathlib.find_any(current_dir, context_roots)
     if other_context_root then
       return { base_dir = current_dir, dir_name = other_context_root }
     end
@@ -149,7 +116,7 @@ function Teleporter.get_suggestion_in_other_context(context, filename, workspace
   end
 
   local shaved_path = pathlib.trim_unmatched_child_path(filename, context_root.base_dir)
-  local key_path = vim.fn.fnamemodify(string.gsub(shaved_path, "^" .. conf.source_root .. sep .. "?", ""), ":h")
+  local key_path = vim.fn.fnamemodify(string.gsub(shaved_path, "^" .. conf.source_root .. pathlib.sep .. "?", ""), ":h")
 
   local context_key_path = pathlib.join_path(context_root.base_dir, context_root.dir_name)
   local source_root_included = pathlib.join_path(context_root.base_dir, context_root.dir_name, conf.source_root)
@@ -193,7 +160,7 @@ function Teleporter.to_other_context(context, destination, workspace_path)
   end
 
   local shaved = pathlib.trim_unmatched_child_path(destination, context_root.base_dir)
-  local symmetry_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. sep, ""), ":h")
+  local symmetry_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. pathlib.sep, ""), ":h")
 
   local key_path = pathlib.join_path(context_root.base_dir, context_root.dir_name, symmetry_path)
   local key_path_with_root =
@@ -248,8 +215,8 @@ function Teleporter.from_other_context(context, destination, workspace_path)
     end
 
     local shaved = pathlib.trim_unmatched_child_path(destination, context_root.base_dir)
-    local symmetry_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. context_root.dir_name .. sep, ""), ":h")
-    local symmetry_path_with_root = conf.source_root .. sep .. symmetry_path
+    local symmetry_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. context_root.dir_name .. pathlib.sep, ""), ":h")
+    local symmetry_path_with_root = conf.source_root .. pathlib.sep .. symmetry_path
 
     -- foo/bar/${context_root}/foobar.suffix.ts -> foo/bar/src/foobar.ts
     local target = pathlib.join_path(context_root.base_dir, symmetry_path_with_root, suffix_removed)
@@ -354,7 +321,7 @@ end
 function Teleporter.new(context)
   local instance = {}
 
-  instance.sep = sep
+  instance.sep = pathlib.sep
   instance.roots = Teleporter.roots_in_context(context)
   instance.extensions = Teleporter.extensions_in_context(context)
   instance.suffix = Teleporter.suffix_in_context(context)
