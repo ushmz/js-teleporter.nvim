@@ -292,11 +292,15 @@ Teleporter.is_other_file = function(context, filename)
   return false
 end
 
+---@class Suggestion
+---@field absolute string
+---@field relative string
+
 ---Suggest the other side file path. It's not sure to exist.
 ---@param context "test" | "story
 ---@param filename string
 ---@param workspace_dir string
----@return table {absolute_path, relative_path}
+---@return Suggestion[]
 function Teleporter.suggest_other_file(context, filename, workspace_dir)
   if not Teleporter.is_js_file(context, filename) then
     return {}
@@ -306,17 +310,24 @@ function Teleporter.suggest_other_file(context, filename, workspace_dir)
     return {}
   end
 
-  local suggestion = Teleporter.suggest_other_file_in_context_root(context, filename, workspace_dir)
-  if not suggestion then
-    suggestion = Teleporter.suggest_other_file_in_same_dir(context, filename, workspace_dir)
+  local suggestions = {}
+  local under_ctx_root = Teleporter.suggest_other_file_in_context_root(context, filename, workspace_dir)
+  if under_ctx_root then
+    table.insert(
+      suggestions,
+      { absolute = under_ctx_root, relative = pathlib.extract_unmatched_child_path(under_ctx_root, workspace_dir) }
+    )
   end
 
-  if suggestion == "" then
-    return {}
+  local in_same_dir = Teleporter.suggest_other_file_in_same_dir(context, filename, workspace_dir)
+  if in_same_dir ~= "" then
+    table.insert(
+      suggestions,
+      { absolute = in_same_dir, relative = pathlib.extract_unmatched_child_path(in_same_dir, workspace_dir) }
+    )
   end
 
-  local relative_path = pathlib.extract_unmatched_child_path(suggestion, workspace_dir)
-  return { suggestion, relative_path }
+  return suggestions
 end
 
 return Teleporter
