@@ -169,11 +169,11 @@ function M.find_any(current_dir, dir_names)
 end
 
 ---Trim unmatched child path from given base path
----e.g. base: /a/b/c/d, comparison: /a/b/c/e/f -> /a/b/c
+---e.g. base: /a/b/c/d, comparison: /a/b/c/e/f -> /d
 ---@param base string
 ---@param comparison string
 ---@return string
-function M.trim_unmatched_child_path(base, comparison)
+function M.extract_unmatched_child_path(base, comparison)
   if base == "" then
     return ""
   end

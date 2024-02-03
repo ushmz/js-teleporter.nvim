@@ -107,7 +107,7 @@ end
 ---@param filename string
 ---@param workspace_dir string
 ---@return string | nil
-function Teleporter.get_suggestion_in_other_context(context, filename, workspace_dir)
+function Teleporter.get_suggestion_in_other_side(context, filename, workspace_dir)
   local conf = Teleporter.get_config()
 
   local context_root = Teleporter.find_other_side_root(context, filename, workspace_dir)
@@ -115,7 +115,7 @@ function Teleporter.get_suggestion_in_other_context(context, filename, workspace
     return nil
   end
 
-  local shaved_path = pathlib.trim_unmatched_child_path(filename, context_root.base_dir)
+  local shaved_path = pathlib.extract_unmatched_child_path(filename, context_root.base_dir)
   local key_path = vim.fn.fnamemodify(string.gsub(shaved_path, "^" .. conf.source_root .. pathlib.sep .. "?", ""), ":h")
 
   local context_key_path = pathlib.join_path(context_root.base_dir, context_root.dir_name)
@@ -137,13 +137,13 @@ end
 ---@param destination string
 ---@param workspace_path string
 ---@return string | nil
-function Teleporter.to_other_context(context, destination, workspace_path)
+function Teleporter.teleport_to_other_side(context, destination, workspace_path)
   local conf = Teleporter.get_config()
 
   local parent = pathlib.parent_dir(destination)
   local ext = pathlib.extension(destination)
 
-  local filename = pathlib.trim_unmatched_child_path(destination, parent)
+  local filename = pathlib.extract_unmatched_child_path(destination, parent)
   local basename = pathlib.basename(filename)
 
   local context_basename = basename .. Teleporter.suffix_in_context(context) .. ext
@@ -159,7 +159,7 @@ function Teleporter.to_other_context(context, destination, workspace_path)
     return
   end
 
-  local shaved = pathlib.trim_unmatched_child_path(destination, context_root.base_dir)
+  local shaved = pathlib.extract_unmatched_child_path(destination, context_root.base_dir)
   local symmetry_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. pathlib.sep, ""), ":h")
 
   local key_path = pathlib.join_path(context_root.base_dir, context_root.dir_name, symmetry_path)
@@ -197,13 +197,13 @@ end
 ---@param destination string
 ---@param workspace_path string
 ---@return string | nil
-function Teleporter.from_other_context(context, destination, workspace_path)
+function Teleporter.teleport_from_other_side(context, destination, workspace_path)
   local conf = Teleporter.get_config()
 
   local parent = pathlib.parent_dir(destination)
   local ext = pathlib.extension(destination)
 
-  local filename = pathlib.trim_unmatched_child_path(destination, parent)
+  local filename = pathlib.extract_unmatched_child_path(destination, parent)
   local basename = pathlib.basename(filename)
 
   local suffix_removed = string.gsub(basename, Teleporter.suffix_in_context(context) .. "$", "") .. ext
@@ -214,7 +214,7 @@ function Teleporter.from_other_context(context, destination, workspace_path)
       return nil
     end
 
-    local shaved = pathlib.trim_unmatched_child_path(destination, context_root.base_dir)
+    local shaved = pathlib.extract_unmatched_child_path(destination, context_root.base_dir)
     local symmetry_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. context_root.dir_name .. pathlib.sep, ""), ":h")
     local symmetry_path_with_root = conf.source_root .. pathlib.sep .. symmetry_path
 
@@ -251,9 +251,9 @@ function Teleporter.teleport_to(context, filename, workspace_path)
   end
 
   if Teleporter.is_other_context_file(context, filename) then
-    return Teleporter.from_other_context(context, filename, workspace_path)
+    return Teleporter.teleport_from_other_side(context, filename, workspace_path)
   else
-    return Teleporter.to_other_context(context, filename, workspace_path)
+    return Teleporter.teleport_to_other_side(context, filename, workspace_path)
   end
 end
 
@@ -301,7 +301,7 @@ function Teleporter.suggest_other_context_paths(context, filename, workspace_dir
     return {}
   end
 
-  local suggestion = Teleporter.get_suggestion_in_other_context(context, filename, workspace_dir)
+  local suggestion = Teleporter.get_suggestion_in_other_side(context, filename, workspace_dir)
   if not suggestion then
     suggestion = Teleporter.get_suggestion_in_same_dir(context, filename, workspace_dir)
   end
@@ -310,7 +310,7 @@ function Teleporter.suggest_other_context_paths(context, filename, workspace_dir
     return {}
   end
 
-  local relative_path = pathlib.trim_unmatched_child_path(suggestion, workspace_dir)
+  local relative_path = pathlib.extract_unmatched_child_path(suggestion, workspace_dir)
   return { suggestion, relative_path }
 end
 
