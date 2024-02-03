@@ -9,19 +9,12 @@ end
 
 ---Suggest user to create new file if the destination file is not found
 ---@param context string
----@param teleporter any
----@param filename string
----@param workspace_path string
-M.suggest_to_create_file = function(context, teleporter, filename, workspace_path)
-  local suggestion_paths = teleporter.suggest_other_context_paths(context, filename, workspace_path)
-  if #suggestion_paths == 0 then
-    vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
-    return
-  end
-
+---@param suggestions Suggestion[]
+M.suggest_to_create_file = function(context, suggestions)
   local select_items = {}
-  for _, v in ipairs(suggestion_paths) do
-    table.insert(select_items, v)
+
+  for _, suggestion in ipairs(suggestions) do
+    table.insert(select_items, suggestion.relative)
   end
   table.insert(select_items, "No")
 
@@ -34,14 +27,14 @@ M.suggest_to_create_file = function(context, teleporter, filename, workspace_pat
     end
 
     if choice == "No" then
-      vim.api.nvim_echo({ "[JSTeleporter] File is not created.", "Normal" }, true, {})
+      vim.api.nvim_echo({ { "\n[JSTeleporter] File is not created.", "Normal" } }, true, {})
       return
     end
 
     local filepath = pathlib.create_file(choice)
     if filepath then
       vim.cmd.edit(filepath)
-      vim.api.nvim_echo({ { '[JSTeleporter] "' .. choice .. '" created!', "Normal" } }, true, {})
+      vim.api.nvim_echo({ { '\n[JSTeleporter] "' .. choice .. '" created!', "Normal" } }, true, {})
     end
   end)
 end
@@ -70,7 +63,14 @@ M.teleport = function(context, opts)
       vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
       return
     end
-    M.suggest_to_create_file(context, teleporter, bufname, workspace_path)
+
+    local suggestions = teleporter.suggest_other_file(context, bufname, workspace_path)
+    if #suggestions == 0 then
+      vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
+      return
+    end
+
+    M.suggest_to_create_file(context, suggestions)
     return
   end
 

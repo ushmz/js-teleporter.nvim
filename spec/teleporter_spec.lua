@@ -151,8 +151,14 @@ describe("Teleporter", function()
       local suggestions = teleporter.suggest_other_file("test", workspace .. "/src/path/to/index.ts", workspace)
 
       assert.is_same(suggestions, {
-        workspace .. "/__tests__/path/to/index.test.ts",
-        "__tests__/path/to/index.test.ts",
+        {
+          absolute = workspace .. "/__tests__/path/to/index.test.ts",
+          relative = "__tests__/path/to/index.test.ts",
+        },
+        {
+          absolute = workspace .. "/src/path/to/index.test.ts",
+          relative = "src/path/to/index.test.ts",
+        },
       })
     end)
   end)
