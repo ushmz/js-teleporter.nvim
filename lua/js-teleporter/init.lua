@@ -50,28 +50,27 @@ end
 ---@param context "test" | "story"
 ---@param opts table
 M.teleport = function(context, opts)
-  local Teleporter = require("js-teleporter.teleporter")
-  local teleporter = Teleporter.new(context)
+  local teleporter = require("js-teleporter.teleporter")
 
   local bufname = pathlib.get_filename_on_current_buffer()
   if not bufname then
     return
   end
 
-  if not Teleporter.is_js_file(context, bufname) then
+  if not teleporter.is_js_file(context, bufname) then
     vim.api.nvim_err_writeln("[JSTeleporter] The file is not javascript/typescript.")
     return
   end
 
   local workspace_path = vim.api.nvim_call_function("getcwd", {})
 
-  local destination = Teleporter.teleport_to(context, bufname, workspace_path)
+  local destination = teleporter.teleport(context, bufname, workspace_path)
   if not destination then
-    if Teleporter.is_other_context_file(context, bufname) then
+    if teleporter.is_other_file(context, bufname) then
       vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
       return
     end
-    M.suggest_to_create_file(context, Teleporter, bufname, workspace_path)
+    M.suggest_to_create_file(context, teleporter, bufname, workspace_path)
     return
   end
 

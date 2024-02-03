@@ -65,7 +65,7 @@ end
 ---@param current_dir string
 ---@param limit_dir string?
 ---@return { base_dir: string, dir_name: string } | nil
-function Teleporter.find_other_side_root(context, current_dir, limit_dir)
+function Teleporter.find_context_root(context, current_dir, limit_dir)
   local root = pathlib.root
   local context_roots = Teleporter.roots_in_context(context)
 
@@ -89,11 +89,12 @@ function Teleporter.find_other_side_root(context, current_dir, limit_dir)
   end
 end
 
+---Suggest the other side file path. It's not sure to exist.
 ---@param context "test" | "story"
 ---@param filename string
 ---@param workspace_dir string
 ---@return string
-function Teleporter.get_suggestion_in_same_dir(context, filename, workspace_dir)
+function Teleporter.suggest_other_file_in_same_dir(context, filename, workspace_dir)
   local parent = pathlib.parent_dir(filename)
   local other_context_filename = pathlib.basename(filename)
     .. Teleporter.suffix_in_context(context)
@@ -102,15 +103,16 @@ function Teleporter.get_suggestion_in_same_dir(context, filename, workspace_dir)
   return pathlib.join_path(parent, other_context_filename)
 end
 
----comment
----@param context "test" | "story"
----@param filename string
----@param workspace_dir string
----@return string | nil
-function Teleporter.get_suggestion_in_other_side(context, filename, workspace_dir)
+---Suggests a possible path for the corresponding file in the opposite context.
+---The existence of the suggested path is not guaranteed.
+---@param context "test" | "story" -- The context of the suggested file (either "test" or "story").
+---@param filename string -- The original filename for which the suggestion is made.
+---@param workspace_dir string -- The root directory of the workspace.
+---@return string | nil -- The suggested file path or nil if the suggestion couldn't be determined.
+function Teleporter.suggest_other_file_in_context_root(context, filename, workspace_dir)
   local conf = Teleporter.get_config()
 
-  local context_root = Teleporter.find_other_side_root(context, filename, workspace_dir)
+  local context_root = Teleporter.find_context_root(context, filename, workspace_dir)
   if not context_root then
     return nil
   end
@@ -132,12 +134,12 @@ function Teleporter.get_suggestion_in_other_side(context, filename, workspace_di
   end
 end
 
----Return other context file path of given file
+---Return existing other context file path of given file
 ---@param context "test" | "story"
 ---@param destination string
 ---@param workspace_path string
 ---@return string | nil
-function Teleporter.teleport_to_other_side(context, destination, workspace_path)
+function Teleporter.teleport_to_other_file(context, destination, workspace_path)
   local conf = Teleporter.get_config()
 
   local parent = pathlib.parent_dir(destination)
@@ -154,7 +156,7 @@ function Teleporter.teleport_to_other_side(context, destination, workspace_path)
     return context_path
   end
 
-  local context_root = Teleporter.find_other_side_root(context, parent, workspace_path)
+  local context_root = Teleporter.find_context_root(context, parent, workspace_path)
   if not context_root then
     return
   end
@@ -193,11 +195,12 @@ function Teleporter.teleport_to_other_side(context, destination, workspace_path)
   return nil
 end
 
+---Return existing other side file
 ---@param context "test" | "story"
 ---@param destination string
 ---@param workspace_path string
 ---@return string | nil
-function Teleporter.teleport_from_other_side(context, destination, workspace_path)
+function Teleporter.teleport_from_other_file(context, destination, workspace_path)
   local conf = Teleporter.get_config()
 
   local parent = pathlib.parent_dir(destination)
@@ -209,7 +212,7 @@ function Teleporter.teleport_from_other_side(context, destination, workspace_pat
   local suffix_removed = string.gsub(basename, Teleporter.suffix_in_context(context) .. "$", "") .. ext
 
   if Teleporter.is_in_context(context, destination) then
-    local context_root = Teleporter.find_other_side_root(context, parent)
+    local context_root = Teleporter.find_context_root(context, parent)
     if not context_root then
       return nil
     end
@@ -244,16 +247,17 @@ end
 ---@param context "test" | "story"
 ---@param filename string
 ---@param workspace_path string
-function Teleporter.teleport_to(context, filename, workspace_path)
+---@return string | nil
+function Teleporter.teleport(context, filename, workspace_path)
   if not Teleporter.is_js_file(context, filename) then
     vim.api.nvim_err_writeln("[JSTeleporter] The file is not javascript/typescript. file: " .. filename)
     return
   end
 
-  if Teleporter.is_other_context_file(context, filename) then
-    return Teleporter.teleport_from_other_side(context, filename, workspace_path)
+  if Teleporter.is_other_file(context, filename) then
+    return Teleporter.teleport_from_other_file(context, filename, workspace_path)
   else
-    return Teleporter.teleport_to_other_side(context, filename, workspace_path)
+    return Teleporter.teleport_to_other_file(context, filename, workspace_path)
   end
 end
 
@@ -275,7 +279,7 @@ end
 ---@param context "test" | "story"
 ---@param filename string
 ---@return boolean
-Teleporter.is_other_context_file = function(context, filename)
+Teleporter.is_other_file = function(context, filename)
   if not Teleporter.is_js_file(context, filename) then
     return false
   end
@@ -288,22 +292,23 @@ Teleporter.is_other_context_file = function(context, filename)
   return false
 end
 
+---Suggest the other side file path. It's not sure to exist.
 ---@param context "test" | "story
 ---@param filename string
 ---@param workspace_dir string
----@return table {absolute_path, relative_path}[]
-function Teleporter.suggest_other_context_paths(context, filename, workspace_dir)
+---@return table {absolute_path, relative_path}
+function Teleporter.suggest_other_file(context, filename, workspace_dir)
   if not Teleporter.is_js_file(context, filename) then
     return {}
   end
 
-  if Teleporter.is_other_context_file(context, filename) then
+  if Teleporter.is_other_file(context, filename) then
     return {}
   end
 
-  local suggestion = Teleporter.get_suggestion_in_other_side(context, filename, workspace_dir)
+  local suggestion = Teleporter.suggest_other_file_in_context_root(context, filename, workspace_dir)
   if not suggestion then
-    suggestion = Teleporter.get_suggestion_in_same_dir(context, filename, workspace_dir)
+    suggestion = Teleporter.suggest_other_file_in_same_dir(context, filename, workspace_dir)
   end
 
   if suggestion == "" then
@@ -312,27 +317,6 @@ function Teleporter.suggest_other_context_paths(context, filename, workspace_dir
 
   local relative_path = pathlib.extract_unmatched_child_path(suggestion, workspace_dir)
   return { suggestion, relative_path }
-end
-
-local function build_instance_method(instance, bytecode_of_method)
-  return load(bytecode_of_method, nil, "b", instance)
-end
-
-function Teleporter.new(context)
-  local instance = {}
-
-  instance.sep = pathlib.sep
-  instance.roots = Teleporter.roots_in_context(context)
-  instance.extensions = Teleporter.extensions_in_context(context)
-  instance.suffix = Teleporter.suffix_in_context(context)
-
-  instance.suggest_other_context_paths =
-    build_instance_method(instance, string.dump(Teleporter.suggest_other_context_paths))
-  instance.is_js_file = build_instance_method(instance, string.dump(Teleporter.is_js_file))
-  instance.is_other_context_file = build_instance_method(instance, string.dump(Teleporter.is_other_context_file))
-  instance.teleport_to = build_instance_method(instance, string.dump(Teleporter.teleport_to))
-
-  return instance
 end
 
 return Teleporter
