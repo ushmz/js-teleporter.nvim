@@ -1,3 +1,5 @@
+local u = require("js-teleporter.util")
+
 ---@type TeleportStrategy
 local NearestParentDirectory = {
   --- Calculates the target file path by transforming a test/storybook file path
@@ -17,7 +19,7 @@ local NearestParentDirectory = {
       target_dir = target_dir:gsub(marker .. "/?", "")
     end
 
-    local target_filepath = vim.fs.joinpath(target_dir, target_filename, extension)
+    local target_filepath = vim.fs.joinpath(target_dir, target_filename .. "." .. extension)
     if vim.fn.filereadable(target_filepath) == 0 then
       return nil
     end
@@ -36,17 +38,14 @@ local NearestParentDirectory = {
   to = function(context, path)
     local dir, filename, extension = path:match("(.*)/([^/]+)%.([^.]+)$")
 
-    print("dir", dir)
     for _, marker in ipairs(context.markers) do
       local root_dir = vim.fs.root(path, marker)
-      print("vim.fs.root", root_dir)
       if root_dir and vim.fn.isdirectory(vim.fs.joinpath(root_dir, marker)) == 1 then
         if dir == root_dir then
           return vim.fs.joinpath(root_dir, marker, filename .. context.suffix .. "." .. extension)
         end
 
-        local breadcrumb = dir:gsub(root_dir, "")
-        print("breadcrumb", breadcrumb)
+        local breadcrumb = u.get_path_difference(dir, root_dir .. "/")
         return vim.fs.joinpath(root_dir, marker, breadcrumb, filename .. context.suffix .. "." .. extension)
       end
     end

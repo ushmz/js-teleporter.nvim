@@ -57,8 +57,8 @@ M.teleport = function(context, opts)
 
   local workspace_path = vim.api.nvim_call_function("getcwd", {})
 
-  local destination = teleporter.teleport(context, bufname, workspace_path)
-  if not destination then
+  local destination = teleporter.teleport(context, bufname)
+  if not destination or destination == "" then
     if teleporter.is_other_file(context, bufname) then
       vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
       return

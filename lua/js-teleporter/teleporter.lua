@@ -136,6 +136,49 @@ end
 
 ---Return existing other context file path of given file
 ---@param context "test" | "story"
+---@param filename string
+---@return string | nil
+function Teleporter.teleport_to(context, filename)
+  local _context = {
+    suffix = Teleporter.suffix_in_context(context),
+    markers = Teleporter.roots_in_context(context),
+  }
+
+  local same_dir_dest = require("js-teleporter.strategies.same_dir").to(_context, filename)
+  if same_dir_dest and vim.fn.filereadable(same_dir_dest) == 1 then
+    return same_dir_dest
+  end
+
+  local parent_dir_dest = require("js-teleporter.strategies.nearest_parent_dir").to(_context, filename)
+  if parent_dir_dest and vim.fn.filereadable(parent_dir_dest) == 1 then
+    return parent_dir_dest
+  end
+
+  return nil
+end
+
+---Return existing other side file
+---@param context "test" | "story"
+---@param filename string
+---@return string | nil
+function Teleporter.teleport_from(context, filename)
+  local _context = {
+    suffix = Teleporter.suffix_in_context(context),
+    markers = Teleporter.roots_in_context(context),
+  }
+
+  local same_dir_dest = require("js-teleporter.strategies.same_dir").from(_context, filename)
+  if same_dir_dest then
+    return same_dir_dest
+  end
+
+  local parent_dir_dest = require("js-teleporter.strategies.nearest_parent_dir").from(_context, filename)
+
+  return parent_dir_dest
+end
+
+---Return existing other context file path of given file
+---@param context "test" | "story"
 ---@param destination string
 ---@param workspace_path string
 ---@return string | nil
@@ -246,18 +289,21 @@ end
 ---Teleport to other file
 ---@param context "test" | "story"
 ---@param filename string
----@param workspace_path string
 ---@return string | nil
-function Teleporter.teleport(context, filename, workspace_path)
+function Teleporter.teleport(context, filename)
   if not Teleporter.is_js_file(context, filename) then
-    vim.api.nvim_err_writeln("[JSTeleporter] The file is not javascript/typescript. file: " .. filename)
+    vim.api.nvim_echo(
+      { "[JSTeleporter] The file is not javascript/typescript. file: " .. filename },
+      true,
+      { err = true }
+    )
     return
   end
 
   if Teleporter.is_other_file(context, filename) then
-    return Teleporter.teleport_from_other_file(context, filename, workspace_path)
+    return Teleporter.teleport_from(context, filename)
   else
-    return Teleporter.teleport_to_other_file(context, filename, workspace_path)
+    return Teleporter.teleport_to(context, filename)
   end
 end
 
@@ -266,9 +312,13 @@ end
 ---@param filename string
 ---@return boolean
 function Teleporter.is_js_file(context, filename)
-  local ext = pathlib.extension(filename)
+  local extension = filename:match(".*(%.[^.]+)$")
+  if extension == nil then
+    return false
+  end
+
   for _, v in ipairs(Teleporter.extensions_in_context(context)) do
-    if v == ext then
+    if v == extension then
       return true
     end
   end
@@ -277,19 +327,20 @@ end
 
 ---Return if true the given file is the other context file
 ---@param context "test" | "story"
----@param filename string
+---@param filepath string
 ---@return boolean
-Teleporter.is_other_file = function(context, filename)
-  if not Teleporter.is_js_file(context, filename) then
+Teleporter.is_other_file = function(context, filepath)
+  local basename = vim.fs.basename(filepath)
+  local filename, extension = basename:match("(.*)(%.[^.]+)$")
+  if not vim.tbl_contains(Teleporter.extensions_in_context(context), extension) then
     return false
   end
 
-  local basename = pathlib.basename(filename)
-  if basename:match(Teleporter.suffix_in_context(context) .. "$") then
-    return true
+  if not filename:match(Teleporter.suffix_in_context(context) .. "$") then
+    return false
   end
 
-  return false
+  return true
 end
 
 ---@class Suggestion
