@@ -52,11 +52,8 @@ end
 ---@param filepath string
 ---@return string
 function M.filename(filepath)
-  local parts = {}
-  for part in filepath:gmatch("[^%" .. M.sep .. "]+") do
-    table.insert(parts, part)
-  end
-  return table.remove(parts)
+  local filename = filepath:match("([^/]*)$")
+  return filename or ""
 end
 
 ---Extract basename from filepath
@@ -64,13 +61,8 @@ end
 ---@return string
 function M.basename(filepath)
   local file = M.filename(filepath)
-
-  local parts = {}
-  for part in file:gmatch("[^%.]+") do
-    table.insert(parts, part)
-  end
-  table.remove(parts)
-  return table.concat(parts, ".")
+  local basename, _ = file:gsub("%..*$", "")
+  return basename
 end
 
 ---Extract extension of given file
@@ -86,6 +78,17 @@ end
 function M.parent_dir(filepath)
   local parent = M._path:new(filepath):parent()
   return parent.filename
+end
+
+---@param path string
+---@return string, string, string
+function M.split_path(path)
+  local dir, basename, extension = path:match("(.*)/([^/]+)%.([^.]+)$")
+  if dir == nil then
+    return "", basename, extension or ""
+  end
+
+  return dir, basename, extension or ""
 end
 
 ---Return if given filepath is directory
