@@ -140,17 +140,18 @@ end
 ---@param filename string
 ---@return string | nil
 function Teleporter.teleport_to(context, filename)
-  local _context = {
+  ---@type  TeleportContext
+  local ctx = {
     suffix = Teleporter.suffix_in_context(context),
     markers = Teleporter.roots_in_context(context),
   }
 
-  local same_dir_dest = require("js-teleporter.strategies.same_dir").to(_context, filename)
+  local same_dir_dest = require("js-teleporter.strategies.same_dir").to(ctx, filename)
   if same_dir_dest and vim.fn.filereadable(same_dir_dest) == 1 then
     return same_dir_dest
   end
 
-  local parent_dir_dest = require("js-teleporter.strategies.nearest_parent_dir").to(_context, filename)
+  local parent_dir_dest = require("js-teleporter.strategies.nearest_parent_dir").to(ctx, filename)
   if parent_dir_dest and vim.fn.filereadable(parent_dir_dest) == 1 then
     return parent_dir_dest
   end
@@ -163,17 +164,18 @@ end
 ---@param filename string
 ---@return string | nil
 function Teleporter.teleport_from(context, filename)
-  local _context = {
+  ---@type  TeleportContext
+  local ctx = {
     suffix = Teleporter.suffix_in_context(context),
     markers = Teleporter.roots_in_context(context),
   }
 
-  local same_dir_dest = require("js-teleporter.strategies.same_dir").from(_context, filename)
+  local same_dir_dest = require("js-teleporter.strategies.same_dir").from(ctx, filename)
   if same_dir_dest and vim.fn.filereadable(same_dir_dest) == 1 then
     return same_dir_dest
   end
 
-  local parent_dir_dest = require("js-teleporter.strategies.nearest_parent_dir").from(_context, filename)
+  local parent_dir_dest = require("js-teleporter.strategies.nearest_parent_dir").from(ctx, filename)
   if parent_dir_dest and vim.fn.filereadable(parent_dir_dest) == 1 then
     return parent_dir_dest
   end

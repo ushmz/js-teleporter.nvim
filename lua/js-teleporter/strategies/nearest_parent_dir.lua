@@ -20,9 +20,6 @@ local NearestParentDirectory = {
     end
 
     local target_filepath = vim.fs.joinpath(target_dir, target_filename .. "." .. extension)
-    if vim.fn.filereadable(target_filepath) == 0 then
-      return nil
-    end
 
     return target_filepath
   end,
