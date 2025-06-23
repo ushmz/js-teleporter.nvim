@@ -2,6 +2,7 @@ local pathlib = require("js-teleporter.path")
 
 Teleporter = {}
 
+---@return TeleporterConfig
 function Teleporter.get_config()
   return require("js-teleporter.config").values
 end
@@ -168,119 +169,13 @@ function Teleporter.teleport_from(context, filename)
   }
 
   local same_dir_dest = require("js-teleporter.strategies.same_dir").from(_context, filename)
-  if same_dir_dest then
+  if same_dir_dest and vim.fn.filereadable(same_dir_dest) == 1 then
     return same_dir_dest
   end
 
   local parent_dir_dest = require("js-teleporter.strategies.nearest_parent_dir").from(_context, filename)
-
-  return parent_dir_dest
-end
-
----Return existing other context file path of given file
----@param context "test" | "story"
----@param destination string
----@param workspace_path string
----@return string | nil
-function Teleporter.teleport_to_other_file(context, destination, workspace_path)
-  local conf = Teleporter.get_config()
-
-  local parent = pathlib.parent_dir(destination)
-  local ext = pathlib.extension(destination)
-
-  local filename = pathlib.extract_unmatched_child_path(destination, parent)
-  local basename = pathlib.basename(filename)
-
-  local context_basename = basename .. Teleporter.suffix_in_context(context) .. ext
-
-  -- Check if the other context file is in the same directory
-  local context_path = pathlib.join_path(parent, context_basename)
-  if pathlib.exists(context_path) then
-    return context_path
-  end
-
-  local context_root = Teleporter.find_context_root(context, parent, workspace_path)
-  if not context_root then
-    return
-  end
-
-  local shaved = pathlib.extract_unmatched_child_path(destination, context_root.base_dir)
-  local symmetry_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. conf.source_root .. pathlib.sep, ""), ":h")
-
-  local key_path = pathlib.join_path(context_root.base_dir, context_root.dir_name, symmetry_path)
-  local key_path_with_root =
-    pathlib.join_path(context_root.base_dir, context_root.dir_name, conf.source_root, symmetry_path)
-
-  -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/foobar.suffix.ts
-  context_path = pathlib.join_path(key_path, context_basename)
-  if pathlib.exists(context_path) then
-    return context_path
-  end
-
-  -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/foobar.ts
-  context_path = pathlib.join_path(key_path, basename)
-  if pathlib.exists(context_path) then
-    return context_path
-  end
-
-  -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/src/foobar.suffix.ts
-  context_path = pathlib.join_path(key_path_with_root, context_basename)
-  if pathlib.exists(context_path) then
-    return context_path
-  end
-
-  -- foo/bar/src/foobar.ts -> foo/bar/${other_context}/src/foobar.ts
-  context_path = pathlib.join_path(key_path_with_root, basename)
-  if pathlib.exists(context_path) then
-    return context_path
-  end
-
-  return nil
-end
-
----Return existing other side file
----@param context "test" | "story"
----@param destination string
----@param workspace_path string
----@return string | nil
-function Teleporter.teleport_from_other_file(context, destination, workspace_path)
-  local conf = Teleporter.get_config()
-
-  local parent = pathlib.parent_dir(destination)
-  local ext = pathlib.extension(destination)
-
-  local filename = pathlib.extract_unmatched_child_path(destination, parent)
-  local basename = pathlib.basename(filename)
-
-  local suffix_removed = string.gsub(basename, Teleporter.suffix_in_context(context) .. "$", "") .. ext
-
-  if Teleporter.is_in_context(context, destination) then
-    local context_root = Teleporter.find_context_root(context, parent)
-    if not context_root then
-      return nil
-    end
-
-    local shaved = pathlib.extract_unmatched_child_path(destination, context_root.base_dir)
-    local symmetry_path = vim.fn.fnamemodify(string.gsub(shaved, "^" .. context_root.dir_name .. pathlib.sep, ""), ":h")
-    local symmetry_path_with_root = conf.source_root .. pathlib.sep .. symmetry_path
-
-    -- foo/bar/${context_root}/foobar.suffix.ts -> foo/bar/src/foobar.ts
-    local target = pathlib.join_path(context_root.base_dir, symmetry_path_with_root, suffix_removed)
-    if pathlib.exists(target) then
-      return target
-    end
-
-    -- foo/bar/${context_root}/foobar.suffix.ts -> foo/bar/foobar.ts
-    target = pathlib.join_path(context_root.base_dir, symmetry_path, suffix_removed)
-    if pathlib.exists(target) then
-      return target
-    end
-  end
-
-  -- explorer same folder
-  local target = pathlib.join_path(parent, suffix_removed)
-  if pathlib.exists(target) then
-    return target
+  if parent_dir_dest and vim.fn.filereadable(parent_dir_dest) == 1 then
+    return parent_dir_dest
   end
 
   return nil
@@ -305,42 +200,6 @@ function Teleporter.teleport(context, filename)
   else
     return Teleporter.teleport_to(context, filename)
   end
-end
-
----Return if true the given file is a JS file
----@param context "test" | "story"
----@param filename string
----@return boolean
-function Teleporter.is_js_file(context, filename)
-  local extension = filename:match(".*(%.[^.]+)$")
-  if extension == nil then
-    return false
-  end
-
-  for _, v in ipairs(Teleporter.extensions_in_context(context)) do
-    if v == extension then
-      return true
-    end
-  end
-  return false
-end
-
----Return if true the given file is the other context file
----@param context "test" | "story"
----@param filepath string
----@return boolean
-Teleporter.is_other_file = function(context, filepath)
-  local basename = vim.fs.basename(filepath)
-  local filename, extension = basename:match("(.*)(%.[^.]+)$")
-  if not vim.tbl_contains(Teleporter.extensions_in_context(context), extension) then
-    return false
-  end
-
-  if not filename:match(Teleporter.suffix_in_context(context) .. "$") then
-    return false
-  end
-
-  return true
 end
 
 ---@class Suggestion

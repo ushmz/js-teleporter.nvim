@@ -3,6 +3,17 @@ _TeleporterConfigurationValues = _TeleporterConfigurationValues or {}
 local config = {}
 config.values = _TeleporterConfigurationValues
 
+---@class TeleporterConfig
+---@field source_root string
+---@field test_roots Array<string>
+---@field test_file_suffix string
+---@field story_roots Array<string>
+---@field story_file_suffix string
+---@field test_extensions Array<string>
+---@field story_extensions Array<string>
+---@field ignore_path Array<string>
+
+---@type TeleporterConfig
 local teleporter_default = {
   -- Root directory of source.
   source_root = "src",
