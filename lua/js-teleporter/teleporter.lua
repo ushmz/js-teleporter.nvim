@@ -219,15 +219,22 @@ function Teleporter.suggest_other_file(context, filename, workspace_dir)
   end
 
   local suggestions = {}
-  local under_ctx_root = Teleporter.suggest_other_file_in_context_root(context, filename, workspace_dir)
-  if under_ctx_root then
-    table.insert(
-      suggestions,
-      { absolute = under_ctx_root, relative = pathlib.extract_unmatched_child_path(under_ctx_root, workspace_dir) }
-    )
+
+  ---@type  TeleportContext
+  local ctx = {
+    suffix = Teleporter.suffix_in_context(context),
+    markers = Teleporter.roots_in_context(context),
+  }
+
+  local nearest_parent_dir = require("js-teleporter.strategies.nearest_parent_dir").to(ctx, filename)
+  if nearest_parent_dir ~= "" then
+    table.insert(suggestions, {
+      absolute = nearest_parent_dir,
+      relative = pathlib.extract_unmatched_child_path(nearest_parent_dir, workspace_dir),
+    })
   end
 
-  local in_same_dir = Teleporter.suggest_other_file_in_same_dir(context, filename, workspace_dir)
+  local in_same_dir = require("js-teleporter.strategies.same_dir").to(ctx, filename)
   if in_same_dir ~= "" then
     table.insert(
       suggestions,

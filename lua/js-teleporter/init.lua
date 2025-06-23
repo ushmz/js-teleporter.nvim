@@ -31,7 +31,7 @@ M.suggest_to_create_file = function(context, suggestions)
       return
     end
 
-    local filepath = pathlib.create_file(choice)
+    local filepath = require("js-teleporter.buffer").new_file(choice)
     if filepath then
       vim.cmd.edit(filepath)
       require("js-teleporter.logger").print_msg('"' .. choice .. '" created!')

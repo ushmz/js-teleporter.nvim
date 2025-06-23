@@ -64,4 +64,24 @@ function M.is_other_file(context, filepath)
   return true
 end
 
+---@param filepath string
+function M.new_file(filepath)
+  if not filepath or filepath == "" then
+    require("js-teleporter.logger").print_err("Please enter a valid file or folder name")
+    return
+  end
+
+  if vim.fn.filereadable(filepath) == 1 then
+    return filepath
+  end
+
+  if vim.fn.isdirectory(filepath) == 1 then
+    vim.fn.mkdir(filepath, "p")
+  else
+    vim.fn.writefile({}, filepath, "a")
+  end
+
+  return filepath
+end
+
 return M
