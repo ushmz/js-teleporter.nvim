@@ -50,8 +50,8 @@ M.teleport = function(context, opts)
     return
   end
 
-  if not teleporter.is_js_file(context, bufname) then
     vim.api.nvim_err_writeln("[JSTeleporter] The file is not javascript/typescript.")
+  if not require("js-teleporter.buffer").is_js_file(context, bufname) then
     return
   end
 
@@ -59,8 +59,8 @@ M.teleport = function(context, opts)
 
   local destination = teleporter.teleport(context, bufname)
   if not destination or destination == "" then
-    if teleporter.is_other_file(context, bufname) then
       vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
+    if require("js-teleporter.buffer").is_other_file(context, bufname) then
       return
     end
 

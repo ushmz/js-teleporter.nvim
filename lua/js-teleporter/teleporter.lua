@@ -291,7 +291,7 @@ end
 ---@param filename string
 ---@return string | nil
 function Teleporter.teleport(context, filename)
-  if not Teleporter.is_js_file(context, filename) then
+  if not require("js-teleporter.buffer").is_js_file(context, filename) then
     vim.api.nvim_echo(
       { "[JSTeleporter] The file is not javascript/typescript. file: " .. filename },
       true,
@@ -300,7 +300,7 @@ function Teleporter.teleport(context, filename)
     return
   end
 
-  if Teleporter.is_other_file(context, filename) then
+  if require("js-teleporter.buffer").is_other_file(context, filename) then
     return Teleporter.teleport_from(context, filename)
   else
     return Teleporter.teleport_to(context, filename)
@@ -353,11 +353,11 @@ end
 ---@param workspace_dir string
 ---@return Suggestion[]
 function Teleporter.suggest_other_file(context, filename, workspace_dir)
-  if not Teleporter.is_js_file(context, filename) then
+  if not require("js-teleporter.buffer").is_js_file(context, filename) then
     return {}
   end
 
-  if Teleporter.is_other_file(context, filename) then
+  if require("js-teleporter.buffer").is_other_file(context, filename) then
     return {}
   end
 
