@@ -31,7 +31,7 @@ end
 ---@return string | nil
 function M.create_file(filepath)
   if not filepath or filepath == "" then
-    vim.api.nvim_err_writeln("[JSTeleporter] Please enter a valid file or folder name")
+    require("js-teleporter.logger").print_err("Please enter a valid file or folder name")
     return
   end
 

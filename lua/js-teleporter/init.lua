@@ -27,14 +27,14 @@ M.suggest_to_create_file = function(context, suggestions)
     end
 
     if choice == "No" then
-      vim.api.nvim_echo({ { "\n[JSTeleporter] File is not created.", "Normal" } }, true, {})
+      require("js-teleporter.logger").print_msg("File is not created.")
       return
     end
 
     local filepath = pathlib.create_file(choice)
     if filepath then
       vim.cmd.edit(filepath)
-      vim.api.nvim_echo({ { '\n[JSTeleporter] "' .. choice .. '" created!', "Normal" } }, true, {})
+      require("js-teleporter.logger").print_msg('"' .. choice .. '" created!')
     end
   end)
 end
@@ -50,8 +50,8 @@ M.teleport = function(context, opts)
     return
   end
 
-    vim.api.nvim_err_writeln("[JSTeleporter] The file is not javascript/typescript.")
   if not require("js-teleporter.buffer").is_js_file(context, bufname) then
+    require("js-teleporter.logger").print_err("The file is not javascript/typescript.")
     return
   end
 
@@ -59,14 +59,14 @@ M.teleport = function(context, opts)
 
   local destination = teleporter.teleport(context, bufname)
   if not destination or destination == "" then
-      vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
     if require("js-teleporter.buffer").is_other_file(context, bufname) then
+      require("js-teleporter.logger").print_err("Teleport destination is not found.")
       return
     end
 
     local suggestions = teleporter.suggest_other_file(context, bufname, workspace_path)
     if #suggestions == 0 then
-      vim.api.nvim_err_writeln("[JSTeleporter] Teleport destination is not found.")
+      require("js-teleporter.logger").print_err("Teleport destination is not found.")
       return
     end
 

@@ -187,11 +187,7 @@ end
 ---@return string | nil
 function Teleporter.teleport(context, filename)
   if not require("js-teleporter.buffer").is_js_file(context, filename) then
-    vim.api.nvim_echo(
-      { "[JSTeleporter] The file is not javascript/typescript. file: " .. filename },
-      true,
-      { err = true }
-    )
+    require("js-teleporter.logger").print_err("The file is not javascript/typescript. file: " .. filename)
     return
   end
 
