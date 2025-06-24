@@ -1,15 +1,27 @@
 local util = require("js-teleporter.util")
 
 describe("#get_path_difference", function()
+  local original_cwd
+
+  before_each(function()
+    original_cwd = vim.fn.getcwd()
+  end)
+
+  after_each(function()
+    vim.cmd("cd " .. original_cwd)
+  end)
+
   it("should return", function()
-    assert.is_same(util.get_path_difference("/project/root/src/main.js", "/project/root/"), "src/main.js")
+    vim.cmd("cd spec/tests")
+    assert.is_same(util.get_path_difference("src/path/to/index.ts", "src/path"), "to/index.ts")
   end)
 
-  it("should return same path if base path is not a parent directory", function ()
-    assert.is_same(util.get_path_difference("/another/dir/file.c", "/project/root/"), "/another/dir/file.c")
+  it("should return same path if base path is not a parent directory", function()
+    vim.cmd("cd spec/tests")
+    assert.is_same(util.get_path_difference("src/path/to/index.ts", "src/path/to"), "index.ts")
   end)
 
-  it("should return empty and print error message whtn base path is not a directory", function ()
-    assert.is_same(util.get_path_difference("/project/root/file.txt", "/project/root/file.txt"), "")
+  it("should return empty and print error message whtn base path is not a directory", function()
+    assert.is_same(util.get_path_difference("src/path/to/index.ts", "stories"), "")
   end)
 end)
