@@ -45,7 +45,7 @@ function M.create_file(filepath)
   else
     path:touch({ parents = true })
   end
-  return path
+  return path.filename
 end
 
 ---Extract filename from filepath
