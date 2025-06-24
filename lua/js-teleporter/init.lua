@@ -1,7 +1,5 @@
 local M = {}
 
-local pathlib = require("js-teleporter.path")
-
 ---@param opts table: Configuration options
 M.setup = function(opts)
   require("js-teleporter.config").set_options(opts)
@@ -45,8 +43,9 @@ end
 M.teleport = function(context, opts)
   local teleporter = require("js-teleporter.teleporter")
 
-  local bufname = pathlib.get_filename_on_current_buffer()
-  if not bufname then
+  local bufnr = vim.api.nvim_get_current_buf()
+  local bufname = vim.api.nvim_buf_get_name(bufnr)
+  if bufname == "" then
     return
   end
 
@@ -55,7 +54,7 @@ M.teleport = function(context, opts)
     return
   end
 
-  local workspace_path = vim.api.nvim_call_function("getcwd", {})
+  local workspace_path = vim.fn.getcwd()
 
   local destination = teleporter.teleport(context, bufname)
   if not destination or destination == "" then
