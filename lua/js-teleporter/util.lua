@@ -1,3 +1,5 @@
+local logger = require("js-teleporter.logger")
+
 local M = {}
 
 --- Extracts the difference part of a full path relative to a base path.
@@ -23,7 +25,7 @@ function M.get_path_difference(full_path, base_path)
   end
 
   if vim.fn.isdirectory(norm_base) == 0 then
-    require("js-teleporter.logger").print_err("[JSTeleporter] Base path should be a directory: " .. norm_base)
+    logger.print_err("Base path should be a directory: " .. norm_base)
     return ""
   end
 
