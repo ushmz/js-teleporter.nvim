@@ -1,6 +1,8 @@
+local logger = require("js-teleporter.logger")
+
 local M = {}
 
----Return if true the given file is a JS file
+---Return true if the given file is a JS file
 ---@param context "test" | "story"
 ---@param filepath string
 ---@return boolean
@@ -28,7 +30,7 @@ function M.is_js_file(context, filepath)
   return false
 end
 
----Return if true the given file is the other context file
+---Return true if the given file is the other context file
 ---@param context "test" | "story"
 ---@param filepath string
 ---@return boolean
@@ -67,7 +69,7 @@ end
 ---@param filepath string
 function M.new_file(filepath)
   if not filepath or filepath == "" then
-    require("js-teleporter.logger").print_err("Please enter a valid file or folder name")
+    logger.print_err("Please enter a valid file or folder name")
     return
   end
 
@@ -75,11 +77,7 @@ function M.new_file(filepath)
     return filepath
   end
 
-  if vim.fn.isdirectory(filepath) == 1 then
-    vim.fn.mkdir(filepath, "p")
-  else
-    vim.fn.writefile({}, filepath, "a")
-  end
+  vim.fn.writefile({}, filepath, "a")
 
   return filepath
 end
