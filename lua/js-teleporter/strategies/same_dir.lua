@@ -14,7 +14,11 @@ local SameDirectory = {
   --- -- It will attempt to find "/src/components/icon.tsx"
   from = function(context, path)
     local dir, filename, extension = path:match("(.*)/([^/]+)%.([^.]+)$")
-    local target_filename = filename:gsub(context.suffix, "")
+    if not dir or not filename or not extension then
+      return nil
+    end
+
+    local target_filename = filename:gsub(context.suffix .. "$", "")
 
     local target_filepath = vim.fs.joinpath(dir, target_filename .. "." .. extension)
 
@@ -32,6 +36,10 @@ local SameDirectory = {
   --- -- It will attempt to find "/src/components/icon.stories.tsx"
   to = function(context, path)
     local dir, filename, extension = path:match("(.*)/([^/]+)%.([^.]+)$")
+    if not dir or not filename or not extension then
+      return nil
+    end
+
     local target_filepath = vim.fs.joinpath(dir, filename .. context.suffix .. "." .. extension)
 
     return target_filepath

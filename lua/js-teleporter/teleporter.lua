@@ -140,7 +140,10 @@ function Teleporter.suggest_other_file(context, filename, workspace_dir)
   if in_same_dir ~= "" then
     table.insert(
       suggestions,
-      { absolute = in_same_dir, relative = require("js-teleporter.util").get_path_difference(in_same_dir, workspace_dir) }
+      {
+        absolute = in_same_dir,
+        relative = require("js-teleporter.util").get_path_difference(in_same_dir, workspace_dir),
+      }
     )
   end
 

@@ -5,13 +5,21 @@ local NearestParentDirectory = {
   --- Calculates the target file path by transforming a test/storybook file path
   --- back to its original source file path.
   --- It returns the full path if the resulting source file exists and is readable, otherwise `nil`.
+  --- 
+  --- Example:
   ---
-  --- @example
-  --- -- Given context = { suffix = ".test", markers = { "__tests__" } }
-  --- -- If path = "/my_project/__tests__/utils/math.test.ts"
+  --- ```lua
+  --- local context = { suffix = ".test", markers = { "__tests__" } }
+  --- local path = "my_project/__tests__/utils/math.test.ts"
   --- -- It will attempt to find "/my_project/utils/math.ts"
+  --- require("js-teleporter.strategy.nearest-parent-directory").from(context, path)
+  --- ```
   from = function(context, path)
     local dir, filename, extension = path:match("(.*)/([^/]+)%.([^.]+)$")
+    if not dir or not filename or not extension then
+      return nil
+    end
+
     local target_filename = filename:gsub(context.suffix, "")
 
     local target_dir = dir
@@ -23,17 +31,24 @@ local NearestParentDirectory = {
 
     return target_filepath
   end,
-  --- Calculates the target file path by transforming a source file path
-  --- to its corresponding test or storybook file path.
-  --- It iterates through `context.markers` and returns the first existing and readable target file.
+  ---Calculates the target file path by transforming a source file path
+  ---to its corresponding test or storybook file path.
+  ---It iterates through `context.markers` and returns the first existing and readable target file.
+  --- 
+  --- Example:
   ---
-  --- @example
-  --- -- Given context = { suffix = ".test", markers = { "__tests__", "spec" } }
-  --- -- If path = "/my_project/src/utils/math.ts"
-  --- -- It will first attempt to find "/my_project/__tests__/utils/math.test.ts"
-  --- -- If not found, it might then (if markers contains it) attempt to find "/my_project/spec/utils/math.test.ts"
+  --- ```lua
+  --- local context = { suffix = ".test", markers = { "__tests__", "spec" } }
+  --- local path = "my_project/src/utils/math.ts", it will first attempt to find 
+  --- -- It will firat attempt to find "my_project/src/utils/__tests__/math.test.ts" > "my_project/src/__tests__/utils/math.test.ts" ...
+  --- -- If not found, it might then (if markers contains it) attempt to find "my_project/utils/spec/math.test.ts" ...
+  --- require("js-teleporter.strategy.nearest-parent-directory").to(context, path)
+  --- ```
   to = function(context, path)
     local dir, filename, extension = path:match("(.*)/([^/]+)%.([^.]+)$")
+    if not dir or not filename or not extension then
+      return nil
+    end
 
     for _, marker in ipairs(context.markers) do
       local root_dir = vim.fs.root(path, marker)
