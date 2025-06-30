@@ -1,40 +1,6 @@
+local config = require("js-teleporter.config")
+
 local Teleporter = {}
-
----Get roots in the context
----@param context "test" | "story"
----@return table
-function Teleporter.roots_in_context(context)
-  if context ~= "test" and context ~= "story" then
-    require("js-teleporter.logger").print_err("Invalid context: " .. context)
-    return {}
-  end
-
-  if context == "test" then
-    return require("js-teleporter.config").values.test_roots
-  elseif context == "story" then
-    return require("js-teleporter.config").values.story_roots
-  end
-
-  return {}
-end
-
----Get suffix in the context
----@param context "test" | "story"
----@return string
-function Teleporter.suffix_in_context(context)
-  if context ~= "test" and context ~= "story" then
-    require("js-teleporter.logger").print_err("Invalid context: " .. context)
-    return ""
-  end
-
-  if context == "test" then
-    return require("js-teleporter.config").values.test_file_suffix
-  elseif context == "story" then
-    return require("js-teleporter.config").values.story_file_suffix
-  end
-
-  return ""
-end
 
 ---Return existing other context file path of given file
 ---@param context "test" | "story"
@@ -43,13 +9,19 @@ end
 function Teleporter.teleport_to(context, filename)
   ---@type  TeleportContext
   local ctx = {
-    suffix = Teleporter.suffix_in_context(context),
-    markers = Teleporter.roots_in_context(context),
+    suffix = config:context_suffix(context),
+    markers = config:context_roots(context),
+    root = config:src_root(context),
   }
 
   local same_dir_dest = require("js-teleporter.strategies.same_dir").to(ctx, filename)
   if same_dir_dest and vim.fn.filereadable(same_dir_dest) == 1 then
     return same_dir_dest
+  end
+
+  local root_dir_dest = require("js-teleporter.strategies.root_dir").to(ctx, filename)
+  if root_dir_dest and vim.fn.filereadable(root_dir_dest) == 1 then
+    return root_dir_dest
   end
 
   local parent_dir_dest = require("js-teleporter.strategies.nearest_parent_dir").to(ctx, filename)
@@ -67,13 +39,19 @@ end
 function Teleporter.teleport_from(context, filename)
   ---@type  TeleportContext
   local ctx = {
-    suffix = Teleporter.suffix_in_context(context),
-    markers = Teleporter.roots_in_context(context),
+    suffix = config:context_suffix(context),
+    markers = config:context_roots(context),
+    root = config:src_root(context),
   }
 
   local same_dir_dest = require("js-teleporter.strategies.same_dir").from(ctx, filename)
   if same_dir_dest and vim.fn.filereadable(same_dir_dest) == 1 then
     return same_dir_dest
+  end
+
+  local root_dir_dest = require("js-teleporter.strategies.root_dir").from(ctx, filename)
+  if root_dir_dest and vim.fn.filereadable(root_dir_dest) == 1 then
+    return root_dir_dest
   end
 
   local parent_dir_dest = require("js-teleporter.strategies.nearest_parent_dir").from(ctx, filename)
@@ -124,27 +102,33 @@ function Teleporter.suggest_other_file(context, filename, workspace_dir)
 
   ---@type  TeleportContext
   local ctx = {
-    suffix = Teleporter.suffix_in_context(context),
-    markers = Teleporter.roots_in_context(context),
+    suffix = config:context_suffix(context),
+    markers = config:context_roots(context),
+    root = config:src_root(context),
   }
 
   local nearest_parent_dir = require("js-teleporter.strategies.nearest_parent_dir").to(ctx, filename)
-  if nearest_parent_dir ~= "" then
+  if nearest_parent_dir then
     table.insert(suggestions, {
       absolute = nearest_parent_dir,
       relative = require("js-teleporter.util").get_path_difference(nearest_parent_dir, workspace_dir),
     })
   end
 
+  local root_dir = require("js-teleporter.strategies.root_dir").to(ctx, filename)
+  if root_dir then
+    table.insert(suggestions, {
+      absolute = root_dir,
+      relative = require("js-teleporter.util").get_path_difference(root_dir, workspace_dir),
+    })
+  end
+
   local in_same_dir = require("js-teleporter.strategies.same_dir").to(ctx, filename)
-  if in_same_dir ~= "" then
-    table.insert(
-      suggestions,
-      {
-        absolute = in_same_dir,
-        relative = require("js-teleporter.util").get_path_difference(in_same_dir, workspace_dir),
-      }
-    )
+  if in_same_dir then
+    table.insert(suggestions, {
+      absolute = in_same_dir,
+      relative = require("js-teleporter.util").get_path_difference(in_same_dir, workspace_dir),
+    })
   end
 
   return suggestions

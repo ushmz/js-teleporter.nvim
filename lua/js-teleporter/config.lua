@@ -1,5 +1,11 @@
 _TeleporterConfigurationValues = _TeleporterConfigurationValues or {}
 
+---@class TeleporterConfigObject
+---@field set_options function
+---@field context_roots function
+---@field context_suffix function
+---@field src_root function
+---@field values TeleporterConfig
 local config = {}
 config.values = _TeleporterConfigurationValues
 
@@ -64,5 +70,48 @@ config.set_options = function(opts)
 end
 
 config.set_options({})
+
+---@param self TeleporterConfigObject
+---@param context "test" | "story"
+---@return string
+config.src_root = function(self, context)
+  return self.values.source_root
+end
+
+---@param self TeleporterConfigObject
+---@param context "test" | "story"
+---@return Array<string>
+config.context_roots = function(self, context)
+  if context ~= "test" and context ~= "story" then
+    require("js-teleporter.logger").print_err("Invalid context: " .. context)
+    return {}
+  end
+
+  if context == "test" then
+    return self.values.test_roots
+  elseif context == "story" then
+    return self.values.test_roots
+  end
+
+  return {}
+end
+
+---@param self TeleporterConfigObject
+---@param context "test" | "story"
+---@return string
+config.context_suffix = function(self, context)
+  if context ~= "test" and context ~= "story" then
+    require("js-teleporter.logger").print_err("Invalid context: " .. context)
+    return ""
+  end
+
+  if context == "test" then
+    return self.values.test_file_suffix
+  elseif context == "story" then
+    return self.values.story_file_suffix
+  end
+
+  return ""
+end
 
 return config
