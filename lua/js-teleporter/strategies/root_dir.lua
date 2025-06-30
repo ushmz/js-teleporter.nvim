@@ -65,9 +65,13 @@ local RootDirectory = {
 
     for _, marker in ipairs(context.markers) do
       ---@type string, string
-      local leading_seg, tailing_seg = dir:match("(.*)/" .. vim.pesc(context.root) .. "/(.*)", 1)
-      if vim.fn.isdirectory(vim.fs.joinpath(leading_seg, marker)) == 1 then
-        return vim.fs.joinpath(leading_seg, marker, tailing_seg, target_filename .. "." .. extension)
+      local leading_seg, tailing_seg = dir:match("(.*/?)" .. vim.pesc(context.root) .. "(/?.*)", 1)
+
+      local context_root_path = (leading_seg or "") .. marker
+      local parent_dir = context_root_path .. (tailing_seg or "")
+
+      if vim.fn.isdirectory(context_root_path) == 1 then
+        return vim.fs.joinpath(parent_dir, target_filename .. "." .. extension)
       end
     end
 

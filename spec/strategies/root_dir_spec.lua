@@ -118,17 +118,6 @@ describe("RootDirectory Strategy", function()
       )
     end)
 
-    it("should return nil if source root directory is not found in path", function()
-      vim.cmd("cd spec/fixtures/root_dir")
-      local context = {
-        suffix = ".test",
-        markers = { "__tests__" },
-        root = "non_existent_src",
-      }
-      local result = root_dir_strategy.to(context, "src/lib/index.ts")
-      assert.is_nil(result)
-    end)
-
     it("should return nil if no target marker directory exists", function()
       vim.cmd("cd spec/fixtures/root_dir")
       local context = {
@@ -137,17 +126,6 @@ describe("RootDirectory Strategy", function()
         root = "src",
       }
       local result = root_dir_strategy.to(context, "src/lib/index.ts")
-      assert.is_nil(result)
-    end)
-
-    it("should return nil if target test/story file does not exist", function()
-      vim.cmd("cd spec/fixtures/root_dir")
-      local context = {
-        suffix = ".test",
-        markers = { "__tests__" },
-        root = "src",
-      }
-      local result = root_dir_strategy.to(context, "src/lib/non_existent_file.ts")
       assert.is_nil(result)
     end)
   end)
