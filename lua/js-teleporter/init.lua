@@ -14,18 +14,12 @@ M.suggest_to_create_file = function(context, suggestions)
   for _, suggestion in ipairs(suggestions) do
     table.insert(select_items, suggestion.relative)
   end
-  table.insert(select_items, "No")
 
   -- Show prompt and ask user to create the other context file or not
   vim.ui.select(select_items, {
     prompt = "The " .. context .. " file is not found. Create " .. context .. " file?",
   }, function(choice)
     if not choice then
-      return
-    end
-
-    if choice == "No" then
-      require("js-teleporter.logger").print_msg("File is not created.")
       return
     end
 
