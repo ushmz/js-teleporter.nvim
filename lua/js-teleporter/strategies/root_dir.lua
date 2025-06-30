@@ -61,7 +61,7 @@ local RootDirectory = {
     local target_filename = filename .. context.suffix
 
     for _, marker in ipairs(context.markers) do
-      local target_dir, count = dir:gsub(context.root, marker, 1)
+      local target_dir, count = dir:gsub("(.*)/" .. context.root, "%1/" .. marker, 1)
       if count > 0 and vim.fn.isdirectory(target_dir) == 1 then
         return vim.fs.joinpath(target_dir, target_filename .. "." .. extension)
       end
