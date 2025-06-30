@@ -77,6 +77,11 @@ function M.new_file(filepath)
     return filepath
   end
 
+  local dir_path = vim.fn.fnamemodify(filepath, ":h")
+  if vim.fn.isdirectory(dir_path) == 0 then
+    vim.fn.mkdir(dir_path, "p")
+  end
+
   vim.fn.writefile({}, filepath, "a")
 
   return filepath
