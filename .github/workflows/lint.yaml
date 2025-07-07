@@ -13,7 +13,7 @@ jobs:
     name: luacheck
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Prepare
         run: |
           sudo apt-get update
@@ -25,8 +25,8 @@ jobs:
     name: stylua
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: JohnnyMorganz/stylua-action@v4.1.0
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: JohnnyMorganz/stylua-action@479972f01e665acfcba96ada452c36608bdbbb5e # v4.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           version: 2.1.0
