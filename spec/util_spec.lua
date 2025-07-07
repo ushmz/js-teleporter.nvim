@@ -28,8 +28,8 @@ describe("#get_path_difference", function()
   it("should return same path if base path is not a parent directory", function()
     vim.cmd("cd spec")
     assert.is_same(
-      util.get_path_difference("fixtures/same_dir/src/index.ts", "fixtures/nearest_parent_dir/src"),
-      "fixtures/same_dir/src/index.ts"
+      util.get_path_difference("fixtures/src/lib/index.ts", "fixtures/src/components"),
+      "fixtures/src/lib/index.ts"
     )
   end)
 
