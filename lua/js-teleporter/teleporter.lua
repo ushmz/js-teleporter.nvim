@@ -11,7 +11,7 @@ function Teleporter.teleport_to(context, filename)
   local ctx = {
     suffix = config:context_suffix(context),
     markers = config:context_roots(context),
-    root = config:src_root(context),
+    root = config:src_root(),
   }
 
   local same_dir_dest = require("js-teleporter.strategies.same_dir").to(ctx, filename)
@@ -41,7 +41,7 @@ function Teleporter.teleport_from(context, filename)
   local ctx = {
     suffix = config:context_suffix(context),
     markers = config:context_roots(context),
-    root = config:src_root(context),
+    root = config:src_root(),
   }
 
   local same_dir_dest = require("js-teleporter.strategies.same_dir").from(ctx, filename)
@@ -104,7 +104,7 @@ function Teleporter.suggest_other_file(context, filename, workspace_dir)
   local ctx = {
     suffix = config:context_suffix(context),
     markers = config:context_roots(context),
-    root = config:src_root(context),
+    root = config:src_root(),
   }
 
   local nearest_parent_dir = require("js-teleporter.strategies.nearest_parent_dir").to(ctx, filename)
