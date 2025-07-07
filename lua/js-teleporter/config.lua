@@ -10,14 +10,14 @@ local config = {}
 config.values = _TeleporterConfigurationValues
 
 ---@class TeleporterConfig
----@field source_root string
----@field test_roots Array<string>
----@field test_file_suffix string
----@field story_roots Array<string>
----@field story_file_suffix string
----@field test_extensions Array<string>
----@field story_extensions Array<string>
----@field ignore_path Array<string>
+---@field source_root? string
+---@field test_roots? Array<string>
+---@field test_file_suffix? string
+---@field story_roots? Array<string>
+---@field story_file_suffix? string
+---@field test_extensions? Array<string>
+---@field story_extensions? Array<string>
+---@field ignore_path? Array<string>
 
 ---@type TeleporterConfig
 local teleporter_default = {
@@ -51,6 +51,7 @@ local first_non_nil = function(...)
   end
 end
 
+---@param opts TeleporterConfig
 config.set_options = function(opts)
   local get = function(name, default_value)
     return first_non_nil(opts[name], teleporter_default[name], default_value)
