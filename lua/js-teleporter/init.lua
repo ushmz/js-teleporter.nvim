@@ -33,7 +33,7 @@ end
 
 ---Run teleport
 ---@param context "test" | "story"
----@param opts table
+---@param opts TeleporterConfig
 M.teleport = function(context, opts)
   local teleporter = require("js-teleporter.teleporter")
 
@@ -43,21 +43,21 @@ M.teleport = function(context, opts)
     return
   end
 
-  if not require("js-teleporter.buffer").is_js_file(context, bufname) then
+  if not require("js-teleporter.buffer").is_js_file(context, bufname, opts) then
     require("js-teleporter.logger").print_err("The file is not javascript/typescript.")
     return
   end
 
   local workspace_path = vim.fn.getcwd()
 
-  local destination = teleporter.teleport(context, bufname)
+  local destination = teleporter.teleport(context, bufname, opts)
   if not destination or destination == "" then
-    if require("js-teleporter.buffer").is_other_file(context, bufname) then
+    if require("js-teleporter.buffer").is_other_file(context, bufname, opts) then
       require("js-teleporter.logger").print_err("Teleport destination is not found.")
       return
     end
 
-    local suggestions = teleporter.suggest_other_file(context, bufname, workspace_path)
+    local suggestions = teleporter.suggest_other_file(context, bufname, workspace_path, opts)
     if #suggestions == 0 then
       require("js-teleporter.logger").print_err("Teleport destination is not found.")
       return

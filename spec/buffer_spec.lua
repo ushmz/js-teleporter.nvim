@@ -4,30 +4,51 @@ local logger = require("js-teleporter.logger")
 local stub = require("luassert.stub")
 local spy = require("luassert.spy")
 
+local opts = {
+  -- Root directory of source.
+  source_root = "src",
+  -- Root directories of tests.
+  -- Files under configured directories are considered tests.
+  test_roots = { "__tests__" },
+  -- Suffix to determine if the file is a test.
+  test_file_suffix = ".test",
+  -- Root directories of storybook.
+  -- Files under configured directories are considered storybook.
+  story_roots = { "stories" },
+  -- Suffix to determine if the file is a storybook.
+  story_file_suffix = ".stories",
+  -- Extensions to determine if the file is a test file.
+  test_extensions = { ".ts", ".js", ".tsx", ".jsx", ".mts", ".mjs", ".cts", ".cjs" },
+  -- Extensions to determine if the file is a storybook.
+  story_extensions = { ".tsx", ".jsx" },
+  -- Files in these directories are ignored
+  ignore_path = { "node_modules" },
+}
+
 describe("#is_js_file", function()
   describe("> context = test", function()
     it("> return true if given file is Javascript related file", function()
-      assert.is_true(buffer.is_js_file("test", "index.js"))
-      assert.is_true(buffer.is_js_file("test", "index.ts"))
-      assert.is_true(buffer.is_js_file("test", "index.test.ts"))
-      assert.is_true(buffer.is_js_file("test", "index.test.ts"))
+      assert.is_true(buffer.is_js_file("test", "index.js", opts))
+      assert.is_true(buffer.is_js_file("test", "index.ts", opts))
+      assert.is_true(buffer.is_js_file("test", "index.test.ts", opts))
+      assert.is_true(buffer.is_js_file("test", "index.test.ts", opts))
     end)
 
     it("> return false if given file is not Javascript related file", function()
-      assert.is_false(buffer.is_js_file("test", "init.lua"))
+      assert.is_false(buffer.is_js_file("test", "init.lua", opts))
     end)
   end)
 
   describe("> context = story", function()
     it("> return true if given file is Javascript related file", function()
-      assert.is_true(buffer.is_js_file("story", "index.jsx"))
-      assert.is_true(buffer.is_js_file("story", "index.tsx"))
-      assert.is_true(buffer.is_js_file("story", "index.stories.jsx"))
-      assert.is_true(buffer.is_js_file("story", "index.stories.tsx"))
+      assert.is_true(buffer.is_js_file("story", "index.jsx", opts))
+      assert.is_true(buffer.is_js_file("story", "index.tsx", opts))
+      assert.is_true(buffer.is_js_file("story", "index.stories.jsx", opts))
+      assert.is_true(buffer.is_js_file("story", "index.stories.tsx", opts))
     end)
 
     it("> return false if given file is not Javascript related file", function()
-      assert.is_false(buffer.is_js_file("story", "init.lua"))
+      assert.is_false(buffer.is_js_file("story", "init.lua", opts))
     end)
   end)
 end)
@@ -35,25 +56,25 @@ end)
 describe("#is_other_file", function()
   describe("> context = test", function()
     it("> return true if given file is test related file", function()
-      assert.is_true(buffer.is_other_file("test", "index.test.ts"))
-      assert.is_true(buffer.is_other_file("test", "index.test.ts"))
+      assert.is_true(buffer.is_other_file("test", "index.test.ts", opts))
+      assert.is_true(buffer.is_other_file("test", "index.test.ts", opts))
     end)
 
     it("> return false if given file is not test related file", function()
-      assert.is_false(buffer.is_other_file("test", "index.js"))
-      assert.is_false(buffer.is_other_file("test", "index.ts"))
+      assert.is_false(buffer.is_other_file("test", "index.js", opts))
+      assert.is_false(buffer.is_other_file("test", "index.ts", opts))
     end)
   end)
 
   describe("> context = story", function()
     it("> return true if given file is storybook related file", function()
-      assert.is_true(buffer.is_other_file("story", "index.stories.jsx"))
-      assert.is_true(buffer.is_other_file("story", "index.stories.tsx"))
+      assert.is_true(buffer.is_other_file("story", "index.stories.jsx", opts))
+      assert.is_true(buffer.is_other_file("story", "index.stories.tsx", opts))
     end)
 
     it("> return false if given file is not storybook related file", function()
-      assert.is_false(buffer.is_other_file("story", "index.jsx"))
-      assert.is_false(buffer.is_other_file("story", "index.tsx"))
+      assert.is_false(buffer.is_other_file("story", "index.jsx", opts))
+      assert.is_false(buffer.is_other_file("story", "index.tsx", opts))
     end)
   end)
 end)
