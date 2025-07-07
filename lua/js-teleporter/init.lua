@@ -1,6 +1,6 @@
 local M = {}
 
----@param opts table: Configuration options
+---@param opts TeleporterConfig Configuration options
 M.setup = function(opts)
   require("js-teleporter.config").set_options(opts)
 end
