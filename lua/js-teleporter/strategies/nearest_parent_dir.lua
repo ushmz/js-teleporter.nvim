@@ -5,7 +5,7 @@ local NearestParentDirectory = {
   --- Calculates the target file path by transforming a test/storybook file path
   --- back to its original source file path.
   --- It returns the full path if the resulting source file exists and is readable, otherwise `nil`.
-  --- 
+  ---
   --- Example:
   ---
   --- ```lua
@@ -34,12 +34,12 @@ local NearestParentDirectory = {
   ---Calculates the target file path by transforming a source file path
   ---to its corresponding test or storybook file path.
   ---It iterates through `context.markers` and returns the first existing and readable target file.
-  --- 
+  ---
   --- Example:
   ---
   --- ```lua
   --- local context = { suffix = ".test", markers = { "__tests__", "spec" } }
-  --- local path = "my_project/src/utils/math.ts", it will first attempt to find 
+  --- local path = "my_project/src/utils/math.ts", it will first attempt to find
   --- -- It will firat attempt to find "my_project/src/utils/__tests__/math.test.ts" > "my_project/src/__tests__/utils/math.test.ts" ...
   --- -- If not found, it might then (if markers contains it) attempt to find "my_project/utils/spec/math.test.ts" ...
   --- require("js-teleporter.strategy.nearest-parent-directory").to(context, path)

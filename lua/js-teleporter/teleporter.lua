@@ -11,7 +11,7 @@ function Teleporter.teleport_to(context, filename)
   local ctx = {
     suffix = config:context_suffix(context),
     markers = config:context_roots(context),
-    root = config:src_root(context),
+    root = config:src_root(),
   }
 
   local same_dir_dest = require("js-teleporter.strategies.same_dir").to(ctx, filename)
@@ -41,7 +41,7 @@ function Teleporter.teleport_from(context, filename)
   local ctx = {
     suffix = config:context_suffix(context),
     markers = config:context_roots(context),
-    root = config:src_root(context),
+    root = config:src_root(),
   }
 
   local same_dir_dest = require("js-teleporter.strategies.same_dir").from(ctx, filename)
@@ -65,14 +65,15 @@ end
 ---Teleport to other file
 ---@param context "test" | "story"
 ---@param filename string
+---@param opts TeleporterConfig
 ---@return string | nil
-function Teleporter.teleport(context, filename)
-  if not require("js-teleporter.buffer").is_js_file(context, filename) then
+function Teleporter.teleport(context, filename, opts)
+  if not require("js-teleporter.buffer").is_js_file(context, filename, opts) then
     require("js-teleporter.logger").print_err("The file is not javascript/typescript. file: " .. filename)
     return
   end
 
-  if require("js-teleporter.buffer").is_other_file(context, filename) then
+  if require("js-teleporter.buffer").is_other_file(context, filename, opts) then
     return Teleporter.teleport_from(context, filename)
   else
     return Teleporter.teleport_to(context, filename)
@@ -88,13 +89,14 @@ end
 ---@param context "test" | "story
 ---@param filename string
 ---@param workspace_dir string
+---@param opts TeleporterConfig
 ---@return Suggestion[]
-function Teleporter.suggest_other_file(context, filename, workspace_dir)
-  if not require("js-teleporter.buffer").is_js_file(context, filename) then
+function Teleporter.suggest_other_file(context, filename, workspace_dir, opts)
+  if not require("js-teleporter.buffer").is_js_file(context, filename, opts) then
     return {}
   end
 
-  if require("js-teleporter.buffer").is_other_file(context, filename) then
+  if require("js-teleporter.buffer").is_other_file(context, filename, opts) then
     return {}
   end
 
@@ -104,7 +106,7 @@ function Teleporter.suggest_other_file(context, filename, workspace_dir)
   local ctx = {
     suffix = config:context_suffix(context),
     markers = config:context_roots(context),
-    root = config:src_root(context),
+    root = config:src_root(),
   }
 
   local nearest_parent_dir = require("js-teleporter.strategies.nearest_parent_dir").to(ctx, filename)

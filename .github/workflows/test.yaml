@@ -1,0 +1,32 @@
+name: Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+jobs:
+  tests:
+    name: Unit tests
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix: 
+        os: [ubuntu-22.04]
+        rev: [v0.10.0, v0.11.0, nightly]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: rhysd/action-setup-vim@8e931b9954b19d4203d5caa5ff5521f3bc21dcc7 # v1.4.2
+        with:
+          neovim: true
+          version: ${{ matrix.rev }}
+      - name: Prepare
+        run: |
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim ../plenary.nvim
+      - name: Run tests
+        run: |
+          nvim --version
+          nvim --headless --noplugin -u scripts/test_init.vim -c "PlenaryBustedDirectory spec"

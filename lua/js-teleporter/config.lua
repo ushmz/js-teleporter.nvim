@@ -73,9 +73,8 @@ end
 config.set_options({})
 
 ---@param self TeleporterConfigObject
----@param context "test" | "story"
 ---@return string
-config.src_root = function(self, context)
+config.src_root = function(self)
   return self.values.source_root
 end
 
