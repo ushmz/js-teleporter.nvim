@@ -3,9 +3,9 @@ local logger = require("js-teleporter.logger")
 local M = {}
 
 ---Return true if the given file is a JS file
----@param context "test" | "story"
+---@param context TeleporterContext
 ---@param filepath string
----@param opts TeleporterConfig
+---@param opts TeleporterConfigObject
 ---@return boolean
 function M.is_js_file(context, filepath, opts)
   local extension = filepath:match(".*(%.[^.]+)$")
@@ -15,9 +15,9 @@ function M.is_js_file(context, filepath, opts)
 
   local extensions = {}
   if context == "test" then
-    extensions = opts.test_extensions
+    extensions = opts:context_extensions("test")
   elseif context == "story" then
-    extensions = opts.story_extensions
+    extensions = opts:context_extensions("story")
   end
 
   for _, v in ipairs(extensions) do
@@ -29,9 +29,9 @@ function M.is_js_file(context, filepath, opts)
 end
 
 ---Return true if the given file is the other context file
----@param context "test" | "story"
+---@param context TeleporterContext
 ---@param filepath string
----@param opts TeleporterConfig
+---@param opts TeleporterConfigObject
 ---@return boolean
 function M.is_other_file(context, filepath, opts)
   local basename = vim.fs.basename(filepath)
@@ -39,9 +39,9 @@ function M.is_other_file(context, filepath, opts)
 
   local extensions = {}
   if context == "test" then
-    extensions = opts.test_extensions
+    extensions = opts:context_extensions("test")
   elseif context == "story" then
-    extensions = opts.story_extensions
+    extensions = opts:context_extensions("story")
   end
 
   if not vim.tbl_contains(extensions, extension) then
@@ -50,9 +50,9 @@ function M.is_other_file(context, filepath, opts)
 
   local suffix = ""
   if context == "test" then
-    suffix = opts.test_file_suffix
+    suffix = opts:context_suffix("test")
   elseif context == "story" then
-    suffix = opts.story_file_suffix
+    suffix = opts:context_suffix("story")
   end
 
   if not filename:match(suffix .. "$") then
