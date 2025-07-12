@@ -17,43 +17,12 @@ js-teleporter.nvim is NeoVim extension to teleport between files like following 
 
 ## Setup
 
-Using [vim-plug](https://github.com/junegunn/vim-plug)
+**Neovim v0.8.0 or above is required.**
 
-```viml
-Plug 'nvim-lua/plenary.nvim'
-Plug 'ushmz/js-teleporter.nvim'
-```
-
-Using [dein](https://github.com/Shougo/dein.vim)
-
-```viml
-call dein#add('nvim-lua/plenary.nvim')
-call dein#add('ushmz/js-teleporter.nvim')
-```
-
-Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
+Use your favorite package manager.
 
 ```lua
-use {
-  'ushmz/js-teleporter.nvim',
-  requires = { {'nvim-lua/plenary.nvim'} }
-}
-```
-
-Using [lazy.nvim](https://github.com/folke/lazy.nvim)
-
-```lua
--- init.lua:
-    {
-    'ushmz/js-teleporter.nvim',
-      dependencies = { 'nvim-lua/plenary.nvim' }
-    }
-
--- plugins/teleporter.lua:
-return {
-    'ushmz/js-teleporter.nvim',
-      dependencies = { 'nvim-lua/plenary.nvim' }
-    }
+{ 'ushmz/js-teleporter.nvim' }
 ```
 
 ## Default value
@@ -80,15 +49,3 @@ require("js-teleporter").setup({
   ignore_path = { "node_modules" },
 })
 ```
-
-## Config
-
-| name              | type            | descriptions                                                                               | default                                                                                |
-| ----------------- | --------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| source_root       | string          | Root directory of source.                                                                  | `"src"`                                                                                |
-| test_roots        | array of string | Root directories of tests. Files under configured directories are considered tests.        | `["__tests__", "__specs__", "__test__", "__spec__", "tests", "specs", "test", "spec"]` |
-| test_file_suffix  | string          | Suffix to determine if the file is a test.                                                 | `".test"`                                                                              |
-| story_root        | array of string | Root directories of tests. Files under configured directories are considered tests.        | `["__tests__", "__specs__", "__test__", "__spec__", "tests", "specs", "test", "spec"]` |
-| story_file_suffix | string          | Suffix to determine if the file is a test.                                                 | `".test"`                                                                              |
-| test_extensions   | array of string | Root directories of storybook. Files under configured directories are considered storybook | `["stories"]`                                                                          |
-| story_extensions  | string          | Suffix to determine if the file is a story book                                            | `.stories`                                                                             |

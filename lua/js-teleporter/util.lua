@@ -45,4 +45,40 @@ function M.get_path_difference(full_path, base_path)
   return full_path
 end
 
+---@param ... string Partial paths to be joined
+---@return string # The combined path
+function M.joinpath(...)
+  if vim.fn.has("nvim-0.10") == 1 then
+    return vim.fs.joinpath(...)
+  end
+
+  local path = table.concat({ ... }, "/")
+
+  if vim.fn.has("win32") then
+    path = path:gsub("\\", "/")
+  end
+
+  return (path:gsub("//+", "/"))
+end
+
+--- @param source string File path to begin the search from.
+--- @param marker string A marker, or list of markers, to search for.
+--- @return string? # Directory path containing the given markers, or `nil`.
+function M.root(source, marker)
+  if vim.fn.has("nvim-0.10") == 1 then
+    return vim.fs.root(source, marker)
+  end
+
+  local paths = vim.fs.find(marker, {
+    upward = true,
+    path = vim.fn.fnamemodify(source, ":p:h"),
+  })
+
+  if #paths == 0 then
+    return nil
+  end
+
+  return vim.fs.dirname(paths[1])
+end
+
 return M
