@@ -1,3 +1,5 @@
+local util = require("js-teleporter.util")
+
 ---@type TeleportStrategy
 local RootDirectory = {
   --- Calculates the target file path by transforming a test/storybook file path back to its original source file path.
@@ -32,7 +34,7 @@ local RootDirectory = {
     for _, marker in ipairs(context.markers) do
       local target_dir, cnt = dir:gsub("(/?)" .. vim.pesc(marker) .. "(/?)", "%1" .. vim.pesc(context.root) .. "%2", 1)
       if cnt == 1 and vim.fn.isdirectory(target_dir) == 1 then
-        return vim.fs.joinpath(target_dir, target_filename .. "." .. extension)
+        return util.joinpath(target_dir, target_filename .. "." .. extension)
       end
     end
 
@@ -71,7 +73,7 @@ local RootDirectory = {
       local parent_dir = context_root_path .. (tailing_seg or "")
 
       if vim.fn.isdirectory(context_root_path) == 1 then
-        return vim.fs.joinpath(parent_dir, target_filename .. "." .. extension)
+        return util.joinpath(parent_dir, target_filename .. "." .. extension)
       end
     end
 

@@ -1,4 +1,4 @@
--- src/path/to/file.ts <-> src/path/to/file.test.ts
+local util = require("js-teleporter.util")
 
 ---@type TeleportStrategy
 local SameDirectory = {
@@ -20,7 +20,7 @@ local SameDirectory = {
 
     local target_filename = filename:gsub(context.suffix .. "$", "")
 
-    local target_filepath = vim.fs.joinpath(dir, target_filename .. "." .. extension)
+    local target_filepath = util.joinpath(dir, target_filename .. "." .. extension)
 
     return target_filepath
   end,
@@ -40,7 +40,7 @@ local SameDirectory = {
       return nil
     end
 
-    local target_filepath = vim.fs.joinpath(dir, filename .. context.suffix .. "." .. extension)
+    local target_filepath = util.joinpath(dir, filename .. context.suffix .. "." .. extension)
 
     return target_filepath
   end,

@@ -1,4 +1,4 @@
-local u = require("js-teleporter.util")
+local util = require("js-teleporter.util")
 
 ---@type TeleportStrategy
 local NearestParentDirectory = {
@@ -27,7 +27,7 @@ local NearestParentDirectory = {
       target_dir = target_dir:gsub(marker .. "/?", "")
     end
 
-    local target_filepath = vim.fs.joinpath(target_dir, target_filename .. "." .. extension)
+    local target_filepath = util.joinpath(target_dir, target_filename .. "." .. extension)
 
     return target_filepath
   end,
@@ -51,14 +51,14 @@ local NearestParentDirectory = {
     end
 
     for _, marker in ipairs(context.markers) do
-      local root_dir = vim.fs.root(path, marker)
-      if root_dir and vim.fn.isdirectory(vim.fs.joinpath(root_dir, marker)) == 1 then
+      local root_dir = util.root(path, marker)
+      if root_dir and vim.fn.isdirectory(util.joinpath(root_dir, marker)) == 1 then
         if dir == root_dir then
-          return vim.fs.joinpath(root_dir, marker, filename .. context.suffix .. "." .. extension)
+          return util.joinpath(root_dir, marker, filename .. context.suffix .. "." .. extension)
         end
 
-        local breadcrumb = u.get_path_difference(dir, root_dir .. "/")
-        return vim.fs.joinpath(root_dir, marker, breadcrumb, filename .. context.suffix .. "." .. extension)
+        local breadcrumb = util.get_path_difference(dir, root_dir .. "/")
+        return util.joinpath(root_dir, marker, breadcrumb, filename .. context.suffix .. "." .. extension)
       end
     end
 
