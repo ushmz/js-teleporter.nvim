@@ -17,6 +17,8 @@ js-teleporter.nvim is NeoVim extension to teleport between files like following 
 
 ## Setup
 
+**Neovim v0.8.0 or above is required.**
+
 Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```viml
