@@ -1,8 +1,11 @@
+local buffer = require("js-teleporter.buffer")
+local logger = require("js-teleporter.logger")
+
 local M = {}
 
----@param opts TeleporterConfig Configuration options
+---@param opts TeleporterConfigOptions Partial configuration options
 M.setup = function(opts)
-  require("js-teleporter.config").set_options(opts)
+  require("js-teleporter.config").setup(opts)
 end
 
 ---Suggest user to create new file if the destination file is not found
@@ -23,17 +26,17 @@ M.suggest_to_create_file = function(context, suggestions)
       return
     end
 
-    local filepath = require("js-teleporter.buffer").new_file(choice)
+    local filepath = buffer.new_file(choice)
     if filepath then
       vim.cmd.edit(filepath)
-      require("js-teleporter.logger").print_msg('"' .. choice .. '" created!')
+      logger.print_msg('"' .. choice .. '" created!')
     end
   end)
 end
 
 ---Run teleport
----@param context "test" | "story"
----@param opts TeleporterConfig
+---@param context TeleporterContext
+---@param opts TeleporterConfigObject
 M.teleport = function(context, opts)
   local teleporter = require("js-teleporter.teleporter")
 
@@ -43,8 +46,8 @@ M.teleport = function(context, opts)
     return
   end
 
-  if not require("js-teleporter.buffer").is_js_file(context, bufname, opts) then
-    require("js-teleporter.logger").print_err("The file is not javascript/typescript.")
+  if not buffer.is_js_file(context, bufname, opts) then
+    logger.print_err("The file is not javascript/typescript.")
     return
   end
 
@@ -52,14 +55,14 @@ M.teleport = function(context, opts)
 
   local destination = teleporter.teleport(context, bufname, opts)
   if not destination or destination == "" then
-    if require("js-teleporter.buffer").is_other_file(context, bufname, opts) then
-      require("js-teleporter.logger").print_err("Teleport destination is not found.")
+    if buffer.is_other_file(context, bufname, opts) then
+      logger.print_err("Teleport destination is not found.")
       return
     end
 
     local suggestions = teleporter.suggest_other_file(context, bufname, workspace_path, opts)
     if #suggestions == 0 then
-      require("js-teleporter.logger").print_err("Teleport destination is not found.")
+      logger.print_err("Teleport destination is not found.")
       return
     end
 

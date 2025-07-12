@@ -1,26 +1,27 @@
-_TeleporterConfigurationValues = _TeleporterConfigurationValues or {}
+---@alias TeleporterContext "test" | "story"
 
 ---@class TeleporterConfigObject
----@field set_options function
----@field context_roots function
----@field context_suffix function
----@field src_root function
----@field values TeleporterConfig
-local config = {}
-config.values = _TeleporterConfigurationValues
+---@field setup function(opts: TeleporterConfig?): void
+---@field src_root function(self): string
+---@field context_roots function(self, context: TeleporterContext): Array<string>
+---@field context_suffix function(self, context: TeleporterContext): string
+---@field context_extensions function(self, context: TeleporterContext): Array<string>
+---@field _options TeleporterConfig
+
+local M = {}
 
 ---@class TeleporterConfig
----@field source_root? string
----@field test_roots? Array<string>
----@field test_file_suffix? string
----@field story_roots? Array<string>
----@field story_file_suffix? string
----@field test_extensions? Array<string>
----@field story_extensions? Array<string>
----@field ignore_path? Array<string>
+---@field source_root string
+---@field test_roots Array<string>
+---@field test_file_suffix string
+---@field story_roots Array<string>
+---@field story_file_suffix string
+---@field test_extensions Array<string>
+---@field story_extensions Array<string>
+---@field ignore_path Array<string>
 
 ---@type TeleporterConfig
-local teleporter_default = {
+local _default = {
   -- Root directory of source.
   source_root = "src",
   -- Root directories of tests.
@@ -41,77 +42,86 @@ local teleporter_default = {
   ignore_path = { "node_modules" },
 }
 
-local first_non_nil = function(...)
-  local n = select("#", ...)
-  for i = 1, n do
-    local value = select(i, ...)
-    if value ~= nil then
-      return value
-    end
+---@class TeleporterConfigOptions
+---@field source_root? string
+---@field test_roots? Array<string>
+---@field test_file_suffix? string
+---@field story_roots? Array<string>
+---@field story_file_suffix? string
+---@field test_extensions? Array<string>
+---@field story_extensions? Array<string>
+---@field ignore_path? Array<string>
+
+---@param opts? TeleporterConfigOptions
+M.setup = function(opts)
+  if vim.fn.has("nvim-0.11") == 1 then
+    vim.validate("opts", opts, "table", true)
+  else
+    vim.validate({ opts = { opts, "table", true } })
   end
+
+  opts = opts or {}
+
+  local merged = vim.tbl_deep_extend("force", _default, opts)
+
+  M._options = merged
 end
-
----@param opts TeleporterConfig
-config.set_options = function(opts)
-  local get = function(name, default_value)
-    return first_non_nil(opts[name], teleporter_default[name], default_value)
-  end
-
-  local set = function(name, default_value)
-    config.values[name] = get(name, default_value)
-  end
-
-  for k, v in pairs(teleporter_default) do
-    set(k, v)
-  end
-
-  local M = {}
-  M.get = get
-  return M
-end
-
-config.set_options({})
 
 ---@param self TeleporterConfigObject
 ---@return string
-config.src_root = function(self)
-  return self.values.source_root
+M.src_root = function(self)
+  return self._options.source_root or ""
 end
 
 ---@param self TeleporterConfigObject
----@param context "test" | "story"
+---@param context TeleporterContext
 ---@return Array<string>
-config.context_roots = function(self, context)
+M.context_roots = function(self, context)
   if context ~= "test" and context ~= "story" then
     require("js-teleporter.logger").print_err("Invalid context: " .. context)
     return {}
   end
 
   if context == "test" then
-    return self.values.test_roots
+    return self._options.test_roots
   elseif context == "story" then
-    return self.values.test_roots
+    return self._options.test_roots
   end
 
   return {}
 end
 
 ---@param self TeleporterConfigObject
----@param context "test" | "story"
+---@param context TeleporterContext
 ---@return string
-config.context_suffix = function(self, context)
+M.context_suffix = function(self, context)
   if context ~= "test" and context ~= "story" then
     require("js-teleporter.logger").print_err("Invalid context: " .. context)
     return ""
   end
 
   if context == "test" then
-    return self.values.test_file_suffix
+    return self._options.test_file_suffix
   elseif context == "story" then
-    return self.values.story_file_suffix
+    return self._options.story_file_suffix
   end
 
   return ""
 end
 
-return config
+M.context_extensions = function(self, context)
+  if context ~= "test" and context ~= "story" then
+    require("js-teleporter.logger").print_err("Invalid context: " .. context)
+    return {}
+  end
+
+  if context == "test" then
+    return self._options.test_extensions
+  elseif context == "story" then
+    return self._options.story_extensions
+  end
+
+  return {}
+end
+
+return M
