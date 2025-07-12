@@ -5,23 +5,13 @@ local stub = require("luassert.stub")
 local spy = require("luassert.spy")
 
 local opts = {
-  -- Root directory of source.
   source_root = "src",
-  -- Root directories of tests.
-  -- Files under configured directories are considered tests.
   test_roots = { "__tests__" },
-  -- Suffix to determine if the file is a test.
   test_file_suffix = ".test",
-  -- Root directories of storybook.
-  -- Files under configured directories are considered storybook.
   story_roots = { "stories" },
-  -- Suffix to determine if the file is a storybook.
   story_file_suffix = ".stories",
-  -- Extensions to determine if the file is a test file.
-  test_extensions = { ".ts", ".js", ".tsx", ".jsx", ".mts", ".mjs", ".cts", ".cjs" },
-  -- Extensions to determine if the file is a storybook.
+  test_extensions = { ".ts", ".js", ".tsx", ".jsx" },
   story_extensions = { ".tsx", ".jsx" },
-  -- Files in these directories are ignored
   ignore_path = { "node_modules" },
 }
 
