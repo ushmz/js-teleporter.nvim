@@ -57,7 +57,7 @@ M.setup = function(opts)
   if vim.fn.has("nvim-0.11") == 1 then
     vim.validate("opts", opts, "table", true)
   else
-    vim.validate({opts = { opts, "table", true }})
+    vim.validate({ opts = { opts, "table", true } })
   end
 
   opts = opts or {}
