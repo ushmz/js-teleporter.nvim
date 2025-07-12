@@ -5,9 +5,9 @@ local M = {}
 ---Return true if the given file is a JS file
 ---@param context TeleporterContext
 ---@param filepath string
----@param opts TeleporterConfigObject
 ---@return boolean
-function M.is_js_file(context, filepath, opts)
+function M.is_js_file(context, filepath)
+  local config = require("js-teleporter.config")
   local extension = filepath:match(".*(%.[^.]+)$")
   if extension == nil then
     return false
@@ -15,9 +15,9 @@ function M.is_js_file(context, filepath, opts)
 
   local extensions = {}
   if context == "test" then
-    extensions = opts:context_extensions("test")
+    extensions = config:context_extensions("test")
   elseif context == "story" then
-    extensions = opts:context_extensions("story")
+    extensions = config:context_extensions("story")
   end
 
   for _, v in ipairs(extensions) do
@@ -31,17 +31,17 @@ end
 ---Return true if the given file is the other context file
 ---@param context TeleporterContext
 ---@param filepath string
----@param opts TeleporterConfigObject
 ---@return boolean
-function M.is_other_file(context, filepath, opts)
+function M.is_other_file(context, filepath)
+  local config = require("js-teleporter.config")
   local basename = vim.fs.basename(filepath)
   local filename, extension = basename:match("(.*)(%.[^.]+)$")
 
   local extensions = {}
   if context == "test" then
-    extensions = opts:context_extensions("test")
+    extensions = config:context_extensions("test")
   elseif context == "story" then
-    extensions = opts:context_extensions("story")
+    extensions = config:context_extensions("story")
   end
 
   if not vim.tbl_contains(extensions, extension) then
@@ -50,9 +50,9 @@ function M.is_other_file(context, filepath, opts)
 
   local suffix = ""
   if context == "test" then
-    suffix = opts:context_suffix("test")
+    suffix = config:context_suffix("test")
   elseif context == "story" then
-    suffix = opts:context_suffix("story")
+    suffix = config:context_suffix("story")
   end
 
   if not filename:match(suffix .. "$") then

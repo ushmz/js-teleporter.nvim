@@ -1,10 +1,10 @@
-local config = require("js-teleporter.config")
-
 local _switch = {
-  ["test"] = function(opts)
+  ["test"] = function()
+    local config = require("js-teleporter.config")
     require("js-teleporter").teleport("test", config)
   end,
-  ["story"] = function(opts)
+  ["story"] = function()
+    local config = require("js-teleporter.config")
     require("js-teleporter").teleport("story", config)
   end,
 }
