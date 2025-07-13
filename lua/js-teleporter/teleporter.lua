@@ -1,4 +1,5 @@
 local config = require("js-teleporter.config")
+local util = require("js-teleporter.util")
 
 local Teleporter = {}
 
@@ -14,22 +15,20 @@ function Teleporter.teleport_to(context, filename)
     root = config:src_root(),
   }
 
-  local same_dir_dest = require("js-teleporter.strategies.same_dir").to(ctx, filename)
-  if same_dir_dest and vim.fn.filereadable(same_dir_dest) == 1 then
-    return same_dir_dest
-  end
+  local ft = vim.bo.filetype
+  local strategies = require("js-teleporter.strategies").ft_strategies(ft)
 
-  local root_dir_dest = require("js-teleporter.strategies.root_dir").to(ctx, filename)
-  if root_dir_dest and vim.fn.filereadable(root_dir_dest) == 1 then
-    return root_dir_dest
-  end
+  ---@type (string|nil)[]
+  local targets = vim.tbl_map(function (strategy)
+    return strategy.to(ctx, filename)
+  end, strategies)
 
-  local parent_dir_dest = require("js-teleporter.strategies.nearest_parent_dir").to(ctx, filename)
-  if parent_dir_dest and vim.fn.filereadable(parent_dir_dest) == 1 then
-    return parent_dir_dest
-  end
-
-  return nil
+  return util.find(function (path)
+    if path == nil then
+      return false
+    end
+    return vim.fn.filereadable(path) == 1
+  end, targets)
 end
 
 ---Return existing other side file
@@ -44,22 +43,20 @@ function Teleporter.teleport_from(context, filename)
     root = config:src_root(),
   }
 
-  local same_dir_dest = require("js-teleporter.strategies.same_dir").from(ctx, filename)
-  if same_dir_dest and vim.fn.filereadable(same_dir_dest) == 1 then
-    return same_dir_dest
-  end
+  local ft = vim.bo.filetype
+  local strategies = require("js-teleporter.strategies").ft_strategies(ft)
+  
+  ---@type (string|nil)[]
+  local targets = vim.tbl_map(function (strategy)
+    return strategy.from(ctx, filename)
+  end, strategies)
 
-  local root_dir_dest = require("js-teleporter.strategies.root_dir").from(ctx, filename)
-  if root_dir_dest and vim.fn.filereadable(root_dir_dest) == 1 then
-    return root_dir_dest
-  end
-
-  local parent_dir_dest = require("js-teleporter.strategies.nearest_parent_dir").from(ctx, filename)
-  if parent_dir_dest and vim.fn.filereadable(parent_dir_dest) == 1 then
-    return parent_dir_dest
-  end
-
-  return nil
+  return util.find(function (path)
+    if path == nil then
+      return false
+    end
+    return vim.fn.filereadable(path) == 1
+  end, targets)
 end
 
 ---Teleport to other file

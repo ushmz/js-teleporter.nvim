@@ -81,4 +81,18 @@ function M.root(source, marker)
   return vim.fs.dirname(paths[1])
 end
 
+---@generic T
+---@param func fun(value: T): boolean Function
+---@param tbl table<any, T> Table
+---@return T | nil
+function M.find(func, tbl)
+  for _, elm in ipairs(tbl) do
+    if func(elm) then
+      return elm
+    end
+  end
+
+  return nil
+end
+
 return M
