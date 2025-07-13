@@ -2,6 +2,7 @@ local util = require("js-teleporter.util")
 
 ---@type TeleportStrategy
 local SameDirectory = {
+  filetype = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
   --- Calculates the target file path by removing a specified suffix from the current filename
   --- within the same directory. It returns the full path if the resulting file exists and is
   --- readable, otherwise `nil`.

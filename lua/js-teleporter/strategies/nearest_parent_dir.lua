@@ -2,6 +2,7 @@ local util = require("js-teleporter.util")
 
 ---@type TeleportStrategy
 local NearestParentDirectory = {
+  filetype = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
   --- Calculates the target file path by transforming a test/storybook file path
   --- back to its original source file path.
   --- It returns the full path if the resulting source file exists and is readable, otherwise `nil`.

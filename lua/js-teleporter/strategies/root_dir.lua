@@ -2,6 +2,7 @@ local util = require("js-teleporter.util")
 
 ---@type TeleportStrategy
 local RootDirectory = {
+  filetype = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
   --- Calculates the target file path by transforming a test/storybook file path back to its original source file path.
   --- It identifies the special marker directory (e.g., '__tests__') relative to the project root,
   --- replaces it with the main source directory name (e.g., 'src'), and removes a suffix from the filename.
