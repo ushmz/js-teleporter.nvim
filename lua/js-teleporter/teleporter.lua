@@ -68,12 +68,12 @@ end
 ---@param opts TeleporterConfig
 ---@return string | nil
 function Teleporter.teleport(context, filename, opts)
-  if not require("js-teleporter.buffer").is_js_file(context, filename, opts) then
+  if not require("js-teleporter.buffer").is_js_file(context, filename) then
     require("js-teleporter.logger").print_err("The file is not javascript/typescript. file: " .. filename)
     return
   end
 
-  if require("js-teleporter.buffer").is_other_file(context, filename, opts) then
+  if require("js-teleporter.buffer").is_other_file(context, filename) then
     return Teleporter.teleport_from(context, filename)
   else
     return Teleporter.teleport_to(context, filename)
@@ -92,11 +92,11 @@ end
 ---@param opts TeleporterConfig
 ---@return Suggestion[]
 function Teleporter.suggest_other_file(context, filename, workspace_dir, opts)
-  if not require("js-teleporter.buffer").is_js_file(context, filename, opts) then
+  if not require("js-teleporter.buffer").is_js_file(context, filename) then
     return {}
   end
 
-  if require("js-teleporter.buffer").is_other_file(context, filename, opts) then
+  if require("js-teleporter.buffer").is_other_file(context, filename) then
     return {}
   end
 
