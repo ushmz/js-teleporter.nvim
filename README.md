@@ -7,13 +7,15 @@ js-teleporter.nvim is NeoVim extension to teleport between files like following 
 
 **This plugin is inspired by [sa2taka/js-teleporter](https://github.com/sa2taka/js-teleporter). Thanks for a great plugin.**
 
-<!--
+
 ## Demo
 
-### Test - Demo
+https://github.com/user-attachments/assets/f9a4c44b-8f33-4878-97af-e072d401003c
 
-### Storybook - Demo
--->
+
+If the test/story file not found, the new file can be created.
+
+https://github.com/user-attachments/assets/2453663e-4a9b-444a-beae-8dca9acbb2a7
 
 ## Setup
 
